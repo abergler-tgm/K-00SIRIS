@@ -57,13 +57,17 @@ class Kinematics:
             print("Base axis cannot be fixed joint!")
             return
 
-        r = sqrt(x^2 + y^2)
-        print("r: " + r)
+        print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
+
+        r = sqrt(x**2 + y**2)
+        print("r: " + str(r))
 
         phi = atan(y/x)
-        print("phi: " + phi)
+        print("phi: " + str(phi))
 
-        return self.inverse_cylindric(r, z, phi, fixed_joint, angle)
+        pass        # for now
+        # #later:
+        # return self.inverse_cylindric(r, z, phi, fixed_joint, angle)
 
     def inverse_cylindric(self, r, z, phi, fixed_joint, angle):
         """
@@ -75,10 +79,10 @@ class Kinematics:
         :return: all axis
         """
 
-        resultset = [0, 0, 0, 0, 0]
+        result_set = [0, 0, 0, 0, 0]
 
-        resultset[fixed_joint] = angle
+        result_set[fixed_joint] = angle
 
         # TODO
 
-        return resultset
+        return result_set
