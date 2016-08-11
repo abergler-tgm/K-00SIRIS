@@ -1,4 +1,4 @@
-from math import sqrt, atan
+import math
 
 
 class Kinematics:
@@ -59,15 +59,14 @@ class Kinematics:
 
         print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
 
-        r = sqrt(x**2 + y**2)
+        r = math.sqrt(x**2 + y**2)
         print("r: " + str(r))
 
-        phi = atan(y/x)
+        phi = math.atan(y/x)
         print("phi: " + str(phi))
 
-        pass        # for now
         # #later:
-        # return self.inverse_cylindric(r, z, phi, fixed_joint, angle)
+        return self.inverse_cylindric(r, z, phi, fixed_joint, angle)
 
     def inverse_cylindric(self, r, z, phi, fixed_joint, angle):
         """
@@ -83,6 +82,56 @@ class Kinematics:
 
         result_set[fixed_joint] = angle
 
-        # TODO
+        if fixed_joint == 0:
+            """
+            redundant because this is already checked in inverse() but this is kinda required to allow this function to be called alone
+            """
+            print("Base axis cannot be fixed joint!")
+            return
+
+        elif fixed_joint == 1:
+            print("Fixed axis " + fixed_joint + " not yet implemented.")
+
+        elif fixed_joint == 2:
+            print("Fixed axis " + fixed_joint + " not yet implemented.")
+
+        elif fixed_joint == 3:
+
+            # Vektor to the given P
+            pv = math.sqrt(r**2 + z**2)
+            print("Pv: " + str(pv))
+
+            # Calculate b
+            thetab2 = math.pi - angle
+            print("Theta_b2: " + str(thetab2))
+
+            b = math.sqrt(self.links[1]**2 + self.links[2]**2 - 2*self.links[1]*self.links[2]*math.cos(thetab2))
+            print("b: " + str(b))
+
+            # calculate theta1
+            thetab = math.acos((-b**2 + self.links[0]**2 + pv**2) / (2*self.links[0]*pv))
+            print("Theta_b: " + str(thetab))
+
+
+            thetaz = math.asin(r/pv)
+            print("Theta_z: " + str(thetaz))
+
+            theta1 = thetab + thetaz
+            print("Theta_1: " + str(theta1))
+
+            #Calculate theta2
+            thetal2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
+            print("Theta_l2: " + str(thetal2))
+
+            thetaP = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+            print("Theta_P: " + str(thetaP))
+
+            theta2 = math.pi - thetal2 - thetaP
+            print("Theta_2: " + str(theta2))
+
+            result_set[0] = phi
+            result_set[1] = theta1
+            result_set[2] = theta2
+            result_set[3] = angle
 
         return result_set
