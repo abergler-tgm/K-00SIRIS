@@ -82,15 +82,21 @@ class Kinematics:
         """
         This calculates all remaining axis angles for the given r, z, phi cylindrical coordinate and fixed joint
 
-        :param x: x-axis
-        :param y: y-axis
-        :param z: z-axis
-        :return: all axis
+        :param r: the radius
+        :param z: the z-coordinate
+        :param phi: the angle of the coordinate (phi)
+        :param fixed_joint: the index of the fixed joint
+        :param angle: the angle of the fixed joint
+        :return: all axis inverse kinematics result
         """
 
         result_set = [0, 0, 0, 0]
 
         result_set[fixed_joint] = angle
+
+        # Vector to the given P
+        pv = math.sqrt(r ** 2 + z ** 2)
+        print("Pv: " + str(pv))
 
         if fixed_joint == 0:
             """
@@ -98,59 +104,76 @@ class Kinematics:
             allow this function to be called alone
             """
             print("Base axis cannot be fixed joint!")
-
             # TODO use exceptions
-
             return
 
         elif fixed_joint == 1:
-            print("Fixed axis " + fixed_joint + " not yet implemented.")
+            print("Fixed axis " + str(fixed_joint) + " not yet implemented.")
+            # TODO implement this
 
         elif fixed_joint == 2:
-            print("Fixed axis " + fixed_joint + " not yet implemented.")
+            print("Fixed axis " + str(fixed_joint) + " not yet implemented.")
+            # TODO implement this
 
         elif fixed_joint == 3:
 
-            # Vektor to the given P
-            pv = math.sqrt(r**2 + z**2)
-            print("Pv: " + str(pv))
-
             # Calculate b
-            thetab2 = math.pi - angle
-            print("Theta_b2: " + str(thetab2))
+            theta_b2 = math.pi - angle
+            print("Theta_b2: " + str(theta_b2))
 
-            b = math.sqrt(self.links[1]**2 + self.links[2]**2 - 2*self.links[1]*self.links[2]*math.cos(thetab2))
+            b = math.sqrt(self.links[1]**2 + self.links[2]**2 - 2*self.links[1]*self.links[2]*math.cos(theta_b2))
             print("b: " + str(b))
 
-            # calculate theta1
-            thetab = math.acos((-b**2 + self.links[0]**2 + pv**2) / (2*self.links[0]*pv))
-            print("Theta_b: " + str(thetab))
+            # calculate theta_1
+            try:
+                theta_b = math.acos((-b**2 + self.links[0]**2 + pv**2) / (2*self.links[0]*pv))
+                print("Theta_b: " + str(theta_b))
+            except ValueError as e:
+                print("Error while calculating theta_b!")
+                # TODO use exceptions
+                return
 
-            thetaz = math.asin(r/pv)
-            print("Theta_z: " + str(thetaz))
+            # calculate theta_z
+            try:
+                theta_z = math.asin(r/pv)
+                print("Theta_z: " + str(theta_z))
+            except ValueError as e:
+                print("Error while calculating theta_z!")
+                # TODO use exceptions
+                return
 
-            theta1 = thetab + thetaz
-            print("Theta_1: " + str(theta1))
+            theta_1 = theta_b + theta_z
+            print("Theta_1: " + str(theta_1))
 
-            # Calculate theta2
-            thetal2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
-            print("Theta_l2: " + str(thetal2))
+            # Calculate theta_l2
+            try:
+                theta_l2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
+                print("Theta_l2: " + str(theta_l2))
+            except ValueError as e:
+                print("Error while calculating theta_l2!")
+                # TODO use exceptions
+                return
 
-            theta_p = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
-            print("Theta_P: " + str(theta_p))
+            # Calculate theta_p
+            try:
+                theta_p = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+                print("Theta_P: " + str(theta_p))
+            except ValueError as e:
+                print("Error while calculating theta_P!")
+                # TODO use exceptions
+                return
 
-            theta2 = math.pi - thetal2 - theta_p
-            print("Theta_2: " + str(theta2))
+            theta_2 = math.pi - theta_l2 - theta_p
+            print("Theta_2: " + str(theta_2))
 
             result_set[0] = phi
-            result_set[1] = theta1
-            result_set[2] = theta2
+            result_set[1] = theta_1
+            result_set[2] = theta_2
             result_set[3] = angle
 
         return result_set
 
     def validate_kinematics(self, x, y, z, angles):
-
         """
         Validates whether the given points can be reached
         :param x:
@@ -160,9 +183,22 @@ class Kinematics:
         :return:
         """
 
+        # TODO
+
         check_x, check_y, check_z = self.direct(angles)
 
-        if x == check_x and y == check_y and z == check_z:
-            return True
-        else:
-            return False
+        return x == check_x and y == check_y and z == check_z
+
+    @staticmethod
+    def round_results(results):
+        """
+        Rounds the given result-set up or down to 2 digits
+        :param results: the result-set that should be rounded
+        :return: the rounded result-set
+        """
+
+        rounded = []
+        for result in results:
+            rounded.append(int((result * 100) + 0.5) / 100.0)
+
+        return rounded

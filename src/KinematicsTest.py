@@ -11,12 +11,16 @@ class MyTestCase(unittest.TestCase):
     """
     Measured usable points (x, y, z):
 
-    1) "KUKA Initial":
-    0° on base, 0° on axis 1, 90° on axis 2, 0° on axis 3, 0° on axis 4:
+    1) "KUKA Initial" Axis 3 fixed:
+    0° on base, 0° on axis 1, 90° on axis 2, 0° on axis 3:
     26, 0, 36
 
-    2) "...
+    2) ...
     ...
+
+    5) Axis 1 fixed:
+    0° on base, 1.35 on axis 1, ~1.1 on axis 2, ~1.03 on axis 3:
+    35.9, 0, 22.02
 
     Impossible points - module should detect errors (x, y, z):
 
@@ -35,32 +39,51 @@ class MyTestCase(unittest.TestCase):
         links = [25, 22, 12.5]
         self.kinematics = Kinematics(links, 5.5)
 
-    def test_direct_1(self):
-        """
-        Test direct kinematics...
+    def test_round(self):
+        to_round = [1.8329342, 1.24351622342, 0.2481955, 4.35892392]
 
-        """
+        rounded = self.kinematics.round_results(to_round)
 
-        # TODO
-        # angles = ...
-        # kinematics.direct(angles)
-        self.assertEqual(True, False)
+        expected = [1.83, 1.24, 0.25, 4.36]
+
+        self.assertEqual(rounded, expected)
 
     def test_inverse_kuka_initial(self):
         """
         Tests the following inverse kinematics problem:
-        1)  "KUKA Initial":
+        1) "KUKA Initial" Axis 3 fixed:
             0° on base, 0° on axis 1, 90° on axis 2, 0° on axis 3, 0° on axis 4:
             26, 0, 36
         """
 
         x, y, z = 26, 0, 36
         fixed_joint = 3
-        results = self.kinematics.inverse(x, y, z, fixed_joint, 0)
+        angle = 0
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
-        # TODO
+        rounded = self.kinematics.round_results(results)
 
-        self.assertEqual(True, False)
+        expected = [0.0, 1.51, 1.48, 0.0]
+
+        self.assertEqual(rounded, expected)
+
+    def test_inverse_first_axis_fixed(self):
+        """
+        5) Axis 1 fixed:
+            0° on base, 1.35 on axis 1, ~1.1 on axis 2, ~1.03 on axis 3:
+            35.9, 0, 22.02
+        """
+
+        x, y, z = 35.9, 0, 22.02
+        fixed_joint = 1
+        angle = 1.35
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+
+        rounded = self.kinematics.round_results(results)
+
+        expected = [0.0, 1.35, 1.1, 1.03]
+
+        self.assertEqual(rounded, expected)
 
     def test_inverse_too_far(self):
         """
@@ -74,7 +97,7 @@ class MyTestCase(unittest.TestCase):
         fixed_joint = 3
         results = self.kinematics.inverse(x, y, z, fixed_joint, 0)
 
-        # TODO
+        # TODO: Exception expected (check for exception)
 
         self.assertEqual(True, False)
 
@@ -88,8 +111,19 @@ class MyTestCase(unittest.TestCase):
         fixed_joint = 0
         results = self.kinematics.inverse(x, y, z, fixed_joint, 0)
 
-        # TODO
+        # TODO: Exception expected (check for exception)
 
+        self.assertEqual(True, False)
+
+    def test_direct_1(self):
+        """
+        Test direct kinematics...
+
+        """
+
+        # TODO
+        # angles = ...
+        # kinematics.direct(angles)
         self.assertEqual(True, False)
 
 if __name__ == '__main__':
