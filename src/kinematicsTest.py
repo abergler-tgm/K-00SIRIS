@@ -1,38 +1,12 @@
 import unittest
 
 from kinematics.kinematics import Kinematics
+from kinematics.kinematicsExceptions import ParameterError, CalculationError
 
 
-class MyTestCase(unittest.TestCase):
+class KinematicsTest(unittest.TestCase):
     """
     Tests the kinematics module
-    """
-
-    """
-    Measured usable points (x, y, z):
-
-    1) "KUKA Initial" Axis 3 fixed:
-    0° on base, 0° on axis 1, 90° on axis 2, 0° on axis 3:
-    26, 0, 36
-
-    2) ...
-    ...
-
-    5) Axis 1 fixed:
-    0° on base, 1.35 on axis 1, ~1.1 on axis 2, ~1.03 on axis 3:
-    35.9, 0, 22.02
-
-    Impossible points - module should detect errors (x, y, z):
-
-    11) "Way too far":
-    not reachable
-    500, 500, 500
-
-    Other stuff
-
-    21) "Base is fixed":
-    The base cannot be the fixed one
-
     """
 
     def setUp(self):
@@ -41,6 +15,9 @@ class MyTestCase(unittest.TestCase):
         self.kinematics = Kinematics(links, 5.5)
 
     def test_round(self):
+        """
+        Tests the round function
+        """
         print("<Test Round START>")
         to_round = [1.8329342, 1.24351622342, 0.2481955, 4.35892392]
 
@@ -100,11 +77,7 @@ class MyTestCase(unittest.TestCase):
 
         x, y, z = 500, 500, 500
         fixed_joint = 3
-        results = self.kinematics.inverse(x, y, z, fixed_joint, 0)
-
-        # TODO: Exception expected (check for exception)
-
-        self.assertEqual(True, False)
+        self.assertRaises(CalculationError, self.kinematics.inverse, x, y, z, fixed_joint, 0)
 
     def test_inverse_base_fixed(self):
         """
@@ -115,11 +88,8 @@ class MyTestCase(unittest.TestCase):
         print("<Test inverse base fixed START>")
         x, y, z = 26, 0, 36
         fixed_joint = 0
-        results = self.kinematics.inverse(x, y, z, fixed_joint, 0)
 
-        # TODO: Exception expected (check for exception)
-
-        self.assertEqual(True, False)
+        self.assertRaises(ParameterError, self.kinematics.inverse, x, y, z, fixed_joint, 0)
 
     def test_direct_1(self):
         """
