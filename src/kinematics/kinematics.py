@@ -24,9 +24,12 @@ class Kinematics:
         :param angles: angles of all joints
         :return: the end position
         """
-
         # TODO
-        pass
+        x = 0
+        y = 0
+        z = 0
+
+        return x, y, z
 
     def direct_cylindric(self, angles):
         """
@@ -37,7 +40,11 @@ class Kinematics:
         """
 
         # TODO
-        pass
+        x = 0
+        y = 0
+        z = 0
+
+        return x, y, z
 
     def inverse(self, x, y, z, fixed_joint, angle):
         """
@@ -55,6 +62,9 @@ class Kinematics:
 
         if fixed_joint == 0:
             print("Base axis cannot be fixed joint!")
+
+            # TODO use exceptions
+
             return
 
         print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
@@ -78,15 +88,19 @@ class Kinematics:
         :return: all axis
         """
 
-        result_set = [0, 0, 0, 0, 0]
+        result_set = [0, 0, 0, 0]
 
         result_set[fixed_joint] = angle
 
         if fixed_joint == 0:
             """
-            redundant because this is already checked in inverse() but this is kinda required to allow this function to be called alone
+            redundant because this is already checked in inverse() but this is kinda required to
+            allow this function to be called alone
             """
             print("Base axis cannot be fixed joint!")
+
+            # TODO use exceptions
+
             return
 
         elif fixed_joint == 1:
@@ -112,21 +126,20 @@ class Kinematics:
             thetab = math.acos((-b**2 + self.links[0]**2 + pv**2) / (2*self.links[0]*pv))
             print("Theta_b: " + str(thetab))
 
-
             thetaz = math.asin(r/pv)
             print("Theta_z: " + str(thetaz))
 
             theta1 = thetab + thetaz
             print("Theta_1: " + str(theta1))
 
-            #Calculate theta2
+            # Calculate theta2
             thetal2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
             print("Theta_l2: " + str(thetal2))
 
-            thetaP = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
-            print("Theta_P: " + str(thetaP))
+            theta_p = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+            print("Theta_P: " + str(theta_p))
 
-            theta2 = math.pi - thetal2 - thetaP
+            theta2 = math.pi - thetal2 - theta_p
             print("Theta_2: " + str(theta2))
 
             result_set[0] = phi
@@ -135,3 +148,21 @@ class Kinematics:
             result_set[3] = angle
 
         return result_set
+
+    def validate_kinematics(self, x, y, z, angles):
+
+        """
+        Validates whether the given points can be reached
+        :param x:
+        :param y:
+        :param z:
+        :param angles:
+        :return:
+        """
+
+        check_x, check_y, check_z = self.direct(angles)
+
+        if x == check_x and y == check_y and z == check_z:
+            return True
+        else:
+            return False
