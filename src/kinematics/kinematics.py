@@ -108,17 +108,68 @@ class Kinematics:
             return
 
         elif fixed_joint == 1:
-            print("Fixed axis " + str(fixed_joint) + " not yet implemented.")
-            # TODO implement this
+            # TODO: Somewhere in this block is a bug that causes wrong calculations.
+            """
+            Not sure whether the bug is in the code itself or it is a math problem (wrong formulas)
+            """
+
+            theta_1 = angle
+
+            # Calculate b
+            theta_z = math.asin(r/pv)
+            theta_b = theta_1 - theta_z
+
+            b = math.sqrt(self.links[0]**2 + pv**2 - 2*self.links[0]*pv*math.cos(theta_b))
+            print("b: " + str(b))
+
+            # Calculate theta_2
+            try:
+                theta_l2 = math.acos((-self.links[2] ** 2 + self.links[1] ** 2 + b ** 2) / (2 * self.links[1] * b))
+                print("Theta_l2: " + str(theta_l2))
+            except ValueError as e:
+                print("Error while calculating theta_l2!")
+                # TODO use exceptions
+                return
+
+            try:
+                theta_pv = math.acos((-pv ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
+                print("Theta_pv: " + str(theta_pv))
+            except ValueError as e:
+                print("Error while calculating theta_pv!")
+                # TODO use exceptions
+                return
+
+            theta_2 = math.pi - theta_l2 - theta_pv
+            print("Theta_2: " + str(theta_2))
+
+            # Calculate theta_3
+            try:
+                theta_b2 = math.acos((-b**2 + self.links[1]**2 + self.links[2]**2) / (2*self.links[1]*self.links[2]))
+                print("Theta_b2: " + str(theta_pv))
+            except ValueError as e:
+                print("Error while calculating theta_pv!")
+                # TODO use exceptions
+                return
+
+            theta_3 = math.pi - theta_b2
+            print("Theta_3: " + str(theta_3))
+
+            # Build result_set
+            result_set[0] = phi
+            result_set[1] = theta_1
+            result_set[2] = theta_2
+            result_set[3] = theta_3
+
 
         elif fixed_joint == 2:
             print("Fixed axis " + str(fixed_joint) + " not yet implemented.")
             # TODO implement this
 
         elif fixed_joint == 3:
+            theta_3 = angle
 
             # Calculate b
-            theta_b2 = math.pi - angle
+            theta_b2 = math.pi - theta_3
             print("Theta_b2: " + str(theta_b2))
 
             b = math.sqrt(self.links[1]**2 + self.links[2]**2 - 2*self.links[1]*self.links[2]*math.cos(theta_b2))
@@ -133,7 +184,6 @@ class Kinematics:
                 # TODO use exceptions
                 return
 
-            # calculate theta_z
             try:
                 theta_z = math.asin(r/pv)
                 print("Theta_z: " + str(theta_z))
@@ -145,7 +195,7 @@ class Kinematics:
             theta_1 = theta_b + theta_z
             print("Theta_1: " + str(theta_1))
 
-            # Calculate theta_l2
+            # Calculate theta_2
             try:
                 theta_l2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
                 print("Theta_l2: " + str(theta_l2))
@@ -154,22 +204,22 @@ class Kinematics:
                 # TODO use exceptions
                 return
 
-            # Calculate theta_p
             try:
-                theta_p = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
-                print("Theta_P: " + str(theta_p))
+                theta_pv = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+                print("Theta_pv: " + str(theta_pv))
             except ValueError as e:
-                print("Error while calculating theta_P!")
+                print("Error while calculating theta_pv!")
                 # TODO use exceptions
                 return
 
-            theta_2 = math.pi - theta_l2 - theta_p
+            theta_2 = math.pi - theta_l2 - theta_pv
             print("Theta_2: " + str(theta_2))
 
+            # Build result_set
             result_set[0] = phi
             result_set[1] = theta_1
             result_set[2] = theta_2
-            result_set[3] = angle
+            result_set[3] = theta_3
 
         return result_set
 
