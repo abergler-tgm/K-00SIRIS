@@ -1,9 +1,9 @@
-from kinematics.kinematics import Kinematics
+from kinematics import Kinematics
 
 
 def main():
     """
-    Test kinematic functions manually
+    This is used to test stuff manually
     """
 
     links = [25, 22, 12.5]
@@ -29,17 +29,6 @@ def main():
     print("Axis1: " + str(rounded[1]))
     print("Axis2: " + str(rounded[2]))
     print("Axis3: " + str(rounded[3]))
-
-
-def test_direct_kinematics(kinematics):
-    """
-    Test direct kinematics here
-
-    :param kinematics: the kinematics module
-    """
-    # angles = ...
-    # kinematics.direct(angles)
-    pass
 
 
 if __name__ == "__main__":

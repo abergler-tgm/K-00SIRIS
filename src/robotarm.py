@@ -1,4 +1,6 @@
-from kinematics.kinematics import Kinematics
+import math
+
+from kinematics import Kinematics
 
 
 class Robotarm:
@@ -7,8 +9,12 @@ class Robotarm:
     """
 
     # TODO: Integrate Hedgehog and get this going
+    """
+    Hedgehog information:
+    2000 Steps per Servo
+    """
 
-    def __init__(self, links, base_offset, min_angles, max_angles, fixed_joint=3, fj_angle=0):
+    def __init__(self, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos, fixed_joint=3, fj_angle=0):
         """
         Constructor - used for initialization
 
@@ -21,10 +27,29 @@ class Robotarm:
         self.base_offset = base_offset
         self.min_angles = min_angles
         self.max_angles = max_angles
+        self.min_servo_pos = min_servo_pos
+        self.max_servo_pos = max_servo_pos
         self.fixed_joint = fixed_joint
         self.fj_angle = fj_angle
 
         self.kinematics = Kinematics(self.links, self.base_offset)
+
+    def move_to_angle(self, angle, joint):
+        """
+        Moves a joint to a certain angle
+        :param angle: the angle
+        :param joint: the joint
+        """
+        if self.min_angles[joint] < angle < self.max_angles[joint]:
+            pass    # TODO: raise error
+
+        total_steps = (self.max_servo_pos[joint]-self.min_servo_pos[joint])
+
+        pos = (total_steps/(2*math.pi)) + self.min_servo_pos[joint]
+
+        # TODO test properly
+
+        return pos
 
     def move_to_cartesian(self, x, y, z):
         """
@@ -83,3 +108,7 @@ class Robotarm:
         :return: True if the given angle is reachable with the given joint, else: False
         """
         return self.min_angles[joint] < angle < self.max_angles[joint]
+
+class Joint:
+
+    def __init__(self, ):

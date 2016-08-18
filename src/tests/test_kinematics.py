@@ -1,7 +1,6 @@
 import unittest
 
-from kinematics.kinematics import Kinematics
-from kinematics.kinematicsExceptions import ParameterError, CalculationError
+from kinematics import Kinematics, CalculationError, ParameterError
 
 
 class KinematicsTest(unittest.TestCase):
