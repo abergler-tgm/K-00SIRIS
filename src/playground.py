@@ -11,13 +11,6 @@ def main():
     This is used to test stuff manually
     """
 
-    links = [22.5, 12.5, 10]
-    kinematics = Kinematics(links, 5.5)
-    x, y, z = 12, 12, 30
-    results = kinematics.inverse(x, y, z, 3, 0)
-
-
-
     service = 'hedgehog_server'
     ctx = zmq.Context.instance()
     endpoint = "tcp://localhost:44367"

@@ -111,7 +111,7 @@ class Kinematics:
             theta_1 = angle
 
             # Calculate b
-            theta_z = math.asin(r/pv)
+            theta_z = math.asin(z/pv)
             theta_b = theta_1 - theta_z
 
             b = math.sqrt(self.links[0]**2 + pv**2 - 2*self.links[0]*pv*math.cos(theta_b))
@@ -165,7 +165,7 @@ class Kinematics:
                 raise CalculationError("Error while calculating theta_b! - The point can most likely not be reached.")
 
             try:
-                theta_z = math.asin(r/pv)
+                theta_z = math.asin(z/pv)
                 print("Theta_z: " + str(theta_z))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_z! - The point can most likely not be reached.")
