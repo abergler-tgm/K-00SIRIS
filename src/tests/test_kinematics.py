@@ -10,7 +10,7 @@ class KinematicsTest(unittest.TestCase):
 
     def setUp(self):
         print("<Setup START>")
-        links = [25, 22, 12.5]
+        links = [26, 22, 12.5]
         self.kinematics = Kinematics(links, 5.5)
 
     def test_round(self):
@@ -29,18 +29,118 @@ class KinematicsTest(unittest.TestCase):
     def test_inverse_kuka_initial(self):
         """
         Tests the following inverse kinematics problem:
-        1) "KUKA Initial" Axis 3 fixed:
-            0° on base, 0° on axis 1, 90° on axis 2, 0° on axis 3, 0° on axis 4:
+        1) "KUKA Initial" Joint 3 fixed:
+            0 on base, 1.51 on joint 1, 1.48 on joint 2, 0 on joint 3, 0 on joint 4:
             26, 0, 36
         """
         print("<Test Inverse KUKA initial START>")
 
-        x, y, z = 26, 0, 36
+        x, y, z = 36, 0, 26
         fixed_joint = 3
         angle = 0
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
-        expected = [0.0, 1.51, 1.48, 0.0]
+        expected = [0.0, 1.51, 1.51, 0.0]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_touch_ground(self):
+        """
+        Tests the following inverse kinematics problem:
+        1) "touch ground" Axis 3 fixed:
+            0 on base, 0.60 on joint 1, 0.80 on joint 2, 0.79 on joint 3, 0 on joint 4:
+            50, 0, 0
+        """
+        print("<Test touch ground initial START>")
+
+        x, y, z = 50, 0, 0
+        fixed_joint = 3
+        angle = 0.79
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+        print(results)
+        expected = [0.0, 0.60, 0.80, 0.79]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_Zick_Zack(self):
+        """
+        Tests the following inverse kinematics problem:
+        1) "Zick Zack" Axis 3 fixed:
+            0 on base, 1.36 on joint 1, 2.46 on joint 2, -2.45 on joint 3, 0 on joint 4:
+            18, 0, 18
+        """
+        print("<Test Zick Zack START>")
+
+        x, y, z = 18, 0, 18
+        fixed_joint = 3
+        angle = -2.45
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+        print(results)
+        expected = [0.0, 1.36, 2.46, -2.45]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_rear_low(self):
+        """
+        Tests the following inverse kinematics problem:
+        1) "rear low" Axis 3 fixed:
+            0 on base, 1.73 on joint 1, 2.50 on joint 2, -0.75 on joint 3, 0 on joint 4:
+            24, 0, 10
+        """
+        print("<Test rear low START>")
+
+        x, y, z = 24, 0, 10
+        fixed_joint = 3
+        angle = -0.75
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+        print(results)
+        expected = [0.0, 1.73, 2.5, -0.75]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_rear_high(self):
+        """
+        Tests the following inverse kinematics problem:
+        1) "rear high" Axis 3 fixed:
+            0 on base, 1.78 on joint 1, 1.08 on joint 2, 0.65 on joint 3, 0 on joint 4:
+            24, 0, 40
+        """
+        print("<Test rear high START>")
+
+        x, y, z = 24, 0, 40
+        fixed_joint = 3
+        angle = 0.65
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+        print(results)
+        expected = [0.0, 1.78, 1.08, 0.65]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_singularity(self):
+        """
+        Tests the following inverse kinematics problem:
+        1) "singularity" Axis 3 fixed:
+            0 on base, 1.85 on joint 1, 1.06 on joint 2, -1.5 on joint 3, 0 on joint 4:
+            50, 0, 0
+        """
+        print("<Test touch singularity START>")
+
+        x, y, z = 0, 0, 50
+        fixed_joint = 3
+        angle = -1.5
+        results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
+        print(results)
+        expected = [0.0, 1.85, 1.06, -1.5]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
