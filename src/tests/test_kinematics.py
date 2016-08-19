@@ -40,11 +40,11 @@ class KinematicsTest(unittest.TestCase):
         angle = 0
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
-        rounded = self.kinematics.round_results(results)
-
         expected = [0.0, 1.51, 1.48, 0.0]
 
-        self.assertEqual(rounded, expected)
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
 
     def test_inverse_first_axis_fixed(self):
         """

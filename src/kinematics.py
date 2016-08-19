@@ -175,7 +175,8 @@ class Kinematics:
 
             # Calculate theta_2
             try:
-                theta_l2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))
+                theta_l2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))\
+                           * math.copysign(1, theta_3)
                 print("Theta_l2: " + str(theta_l2))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
