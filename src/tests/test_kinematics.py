@@ -1,11 +1,11 @@
 import unittest
 
-from kinematics import Kinematics, CalculationError, ParameterError
+from kinematics import Kinematics, CalculationError, ParameterError, WorldCoordinateSystem
 
 
 class KinematicsTest(unittest.TestCase):
     """
-    Tests the kinematics module
+    Tests the kinematics class module
     """
 
     def setUp(self):
@@ -190,16 +190,16 @@ class KinematicsTest(unittest.TestCase):
 
         self.assertRaises(ParameterError, self.kinematics.inverse, x, y, z, fixed_joint, 0)
 
-    def test_direct_1(self):
-        """
-        Test direct kinematics...
-
-        """
-        print("<Test direct START>")
-
+class CoordinatesTest(unittest.TestCase):
+    """
+    Tests the kinematics module
+    """
+    def setUp(self):
         # TODO
-        # angles = ...
-        # kinematics.direct(angles)
+        self.wcs = WorldCoordinateSystem(0, 0, 0, 0, 0, 0)
+
+    def test_world_1(self):
+        # TODO
         self.assertEqual(True, False)
 
 if __name__ == '__main__':

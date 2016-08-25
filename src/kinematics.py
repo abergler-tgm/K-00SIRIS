@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 
 class Kinematics:
     """
@@ -16,6 +18,9 @@ class Kinematics:
 
         self.links = links
         self.base_offset = base_offset
+
+        # Dictionary for storing world coordinate systems
+        self.world_cs = {}
 
     def direct(self, angles):
         """
@@ -92,7 +97,7 @@ class Kinematics:
         result_set = [0, 0, 0, 0]
 
         # Vector to the given P
-        vp = math.sqrt(r**2 + z**2)
+        vp = math.sqrt(r ** 2 + z ** 2)
         print("Pv: " + str(vp))
 
         if fixed_joint == 0:
@@ -104,10 +109,10 @@ class Kinematics:
             theta_1 = angle
 
             # Calculate b
-            theta_tcp = math.asin(z/vp)
+            theta_tcp = math.asin(z / vp)
             theta_b = theta_1 - theta_tcp
 
-            b = math.sqrt(self.links[0]**2 + vp**2 - 2*self.links[0]*vp*math.cos(theta_b))
+            b = math.sqrt(self.links[0] ** 2 + vp ** 2 - 2 * self.links[0] * vp * math.cos(theta_b))
             print("b: " + str(b))
 
             # Calculate theta_2
@@ -128,7 +133,8 @@ class Kinematics:
 
             # Calculate theta_3
             try:
-                theta_b2 = math.acos((-b**2 + self.links[1]**2 + self.links[2]**2) / (2*self.links[1]*self.links[2]))
+                theta_b2 = math.acos(
+                    (-b ** 2 + self.links[1] ** 2 + self.links[2] ** 2) / (2 * self.links[1] * self.links[2]))
                 print("Theta_b2: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b2! - The point can most likely not be reached.")
@@ -147,18 +153,19 @@ class Kinematics:
             theta_b2 = math.pi - theta_3
             print("Theta_b2: " + str(theta_b2))
 
-            b = math.sqrt(self.links[1]**2 + self.links[2]**2 - 2*self.links[1]*self.links[2]*math.cos(theta_b2))
+            b = math.sqrt(
+                self.links[1] ** 2 + self.links[2] ** 2 - 2 * self.links[1] * self.links[2] * math.cos(theta_b2))
             print("b: " + str(b))
 
             # calculate theta_1
             try:
-                theta_b = math.acos((-b**2 + self.links[0]**2 + vp**2) / (2*self.links[0]*vp))
+                theta_b = math.acos((-b ** 2 + self.links[0] ** 2 + vp ** 2) / (2 * self.links[0] * vp))
                 print("Theta_b: " + str(theta_b))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b! - The point can most likely not be reached.")
 
             try:
-                theta_tcp = math.asin(z/vp)
+                theta_tcp = math.asin(z / vp)
                 print("Theta_tcp: " + str(theta_tcp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
@@ -168,14 +175,14 @@ class Kinematics:
 
             # Calculate theta_2
             try:
-                theta_l2 = math.acos((-self.links[2]**2 + self.links[1]**2 + b**2) / (2*self.links[1]*b))\
+                theta_l2 = math.acos((-self.links[2] ** 2 + self.links[1] ** 2 + b ** 2) / (2 * self.links[1] * b)) \
                            * math.copysign(1, theta_3)
                 print("Theta_l2: " + str(theta_l2))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
             try:
-                theta_vp = math.acos((-vp**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+                theta_vp = math.acos((-vp ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
                 print("Theta_vp: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_vp! - The point can most likely not be reached.")
@@ -240,7 +247,7 @@ class Kinematics:
         result_set = [0, 0, 0, 0]
 
         # Vector to the given P
-        vp = math.sqrt(r**2 + z**2)
+        vp = math.sqrt(r ** 2 + z ** 2)
         print("Pv: " + str(vp))
 
         # Calculate the position of the third joint (R3)
@@ -254,8 +261,8 @@ class Kinematics:
         theta_r3 = math.asin(r3_z / r3_r)
 
         # Calculate the triangle(R1, R2, R3)
-        theta_vr3 = math.sqrt((-vr3**2 + self.links[0] + self.links[1])/(2 * self.links[0] * self.links[1]))
-        theta_l0 = math.sqrt((-self.links[0]**2 + self.links[1]**2 + vr3**2)/(2 * self.links[1] * vr3))
+        theta_vr3 = math.sqrt((-vr3 ** 2 + self.links[0] + self.links[1]) / (2 * self.links[0] * self.links[1]))
+        theta_l0 = math.sqrt((-self.links[0] ** 2 + self.links[1] ** 2 + vr3 ** 2) / (2 * self.links[1] * vr3))
         theta_l1 = 180 - theta_l0 - theta_vr3
 
         # Calculate the angle to the given point
@@ -266,7 +273,7 @@ class Kinematics:
             raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
 
         # Calculate one of the angles of the triangle(R2, R3, TCP)
-        theta_vtcp = math.sqrt((-vp**2 + vr3**2 + self.links[2]**2)/(2*vr3*self.links[2]))
+        theta_vtcp = math.sqrt((-vp ** 2 + vr3 ** 2 + self.links[2] ** 2) / (2 * vr3 * self.links[2]))
 
         theta_1 = theta_tcp + theta_r3 + theta_l1
         theta_2 = 180 - theta_vr3
@@ -279,6 +286,15 @@ class Kinematics:
         result_set[3] = theta_3
 
         return result_set
+
+    def add_world_cs(self, name, world):
+        self.world_cs[name] = world
+
+    def remove_world_cs(self, name):
+        self.world_cs.pop(name)
+
+    def get_world_cs(self, name):
+        return self.world_cs[name]
 
     @staticmethod
     def cartesian_to_cylindric(x, y, z):
@@ -328,7 +344,10 @@ class Kinematics:
         return rounded
 
 
+# TODO: to convert tool into cartesian: create a world coordinate system that is aligned "on the tcp" and use that.
+
 class WorldCoordinateSystem:
+    # TODO: Needs testing
     """
     Used to create alternate cartesian coordinate systems that can be placed anywhere in
     relation to the base coordinate system
@@ -344,6 +363,7 @@ class WorldCoordinateSystem:
         :param theta_y: the rotation around the y-axis
         :param theta_z: the rotation around the z-axis
         """
+
         self.x_offset = x_offset
         self.y_offset = y_offset
         self.z_offset = z_offset
@@ -351,27 +371,78 @@ class WorldCoordinateSystem:
         self.theta_y = theta_y
         self.theta_z = theta_z
 
-    def cartesian_to_world(self, x, y, z):
-        # TODO
-        pass
+        # Already creating the rotation matrices because the coordinate system will not change
+        self.rotate_x = np.array([[1, 0, 0],
+                                  [0, math.cos(self.theta_x), -math.sin(self.theta_x)],
+                                  [0, math.sin(self.theta_x), math.cos(self.theta_x)]])
 
-    def cylindric_to_world(self, r, z, phi):
-        # TODO
-        pass
+        self.rotate_y = np.array([[math.cos(self.theta_y), 0, math.sin(self.theta_y)],
+                                  [0, 1, 0],
+                                  [-math.sin(self.theta_y), 0, math.cos(self.theta_y)]])
 
-    def world_to_cartesian(self, x, y, z):
-        # TODO
-        pass
+        self.rotate_z = np.array([[math.cos(self.theta_z), -math.sin(self.theta_z), 0],
+                                  [math.sin(self.theta_z), math.cos(self.theta_z), 0],
+                                  [0, 0, 1]])
 
-    def world_to_cylindrical(self, x, y, z):
-        # TODO
-        pass
+        # Rotation matrices for reverse direction (other leading sign)
+        self.rotate_x_reverse = np.array([[1, 0, 0],
+                                          [0, math.cos(-self.theta_x), -math.sin(-self.theta_x)],
+                                          [0, math.sin(-self.theta_x), math.cos(-self.theta_x)]])
+
+        self.rotate_y_reverse = np.array([[math.cos(-self.theta_y), 0, math.sin(-self.theta_y)],
+                                          [0, 1, 0],
+                                          [-math.sin(-self.theta_y), 0, math.cos(-self.theta_y)]])
+
+        self.rotate_z_reverse = np.array([[math.cos(-self.theta_z), -math.sin(-self.theta_z), 0],
+                                          [math.sin(-self.theta_z), math.cos(-self.theta_z), 0],
+                                          [0, 0, 1]])
+
+    def world_to_base(self, x, y, z):
+        """
+        Converts from world coordinates into base coordinates
+        :param x: the x-coordinate (world coordinate)
+        :param y: the y-coordinate (world coordinate)
+        :param z: the z-coordinate (world coordinate)
+        :return: The base x, y, z coordinates.
+        """
+        old_point = np.array([x, y, z])
+
+        # rotate around all axis (x, y, z)
+        rotated_x = np.dot(old_point, self.rotate_x_reverse)
+        rotated_xy = np.dot(rotated_x, self.rotate_y_reverse)
+        rotated_xyz = np.dot(rotated_xy, self.rotate_z_reverse)
+
+        # move
+        moved_point = rotated_xyz + np.array([self.x_offset, self.y_offset, self.z_offset])
+
+        return moved_point[0], moved_point[1], moved_point[2]
+
+    def base_to_world(self, x, y, z):
+        """
+        Converts from base coordinates into world coordinates
+        :param x: the x-coordinate (base coordinate)
+        :param y: the y-coordinate (basecoordinate)
+        :param z: the z-coordinate (base coordinate)
+        :return: The world x, y, z coordinates.
+        """
+        old_point = np.array([x, y, z])
+
+        # move
+        moved_point = old_point - np.array([self.x_offset, self.y_offset, self.z_offset])
+
+        # rotate around all axis (x, y, z)
+        rotated_x = np.dot(moved_point, self.rotate_x)
+        rotated_xy = np.dot(rotated_x, self.rotate_y)
+        rotated_xyz = np.dot(rotated_xy, self.rotate_z)
+
+        return rotated_xyz[0], rotated_xyz[1], rotated_xyz[2]
 
 
 class KinematicsError(Exception):
     """
     Is thrown when an error occurs within the kinematics module
     """
+
     def __init__(self, message):
         """
         Initializes the exception
