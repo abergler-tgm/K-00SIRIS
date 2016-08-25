@@ -109,6 +109,8 @@ class Robotarm:
         """
         return self.min_angles[joint] < angle < self.max_angles[joint]
 
+
 class Joint:
 
     def __init__(self, ):
+        pass

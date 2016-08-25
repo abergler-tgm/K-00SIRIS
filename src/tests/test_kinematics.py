@@ -11,7 +11,7 @@ class KinematicsTest(unittest.TestCase):
     def setUp(self):
         print("<Setup START>")
         links = [26, 22, 12.5]
-        self.kinematics = Kinematics(links, 5.5)
+        self.kinematics = Kinematics(links, 0)
 
     def test_round(self):
         """
@@ -66,7 +66,7 @@ class KinematicsTest(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_inverse_Zick_Zack(self):
+    def test_inverse_zick_zack(self):
         """
         Tests the following inverse kinematics problem:
         1) "Zick Zack" Axis 3 fixed:

@@ -86,35 +86,28 @@ class Kinematics:
 
         print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
 
+        # Move coordinate system to first joint "root" to remove the offset
+        r = r - self.base_offset
+
         result_set = [0, 0, 0, 0]
 
-        result_set[fixed_joint] = angle
-
         # Vector to the given P
-        pv = math.sqrt(r ** 2 + z ** 2)
-        print("Pv: " + str(pv))
+        vp = math.sqrt(r**2 + z**2)
+        print("Pv: " + str(vp))
 
         if fixed_joint == 0:
-            """
-            redundant because this is already checked in inverse() but this is kinda required to
-            allow this function to be called alone
-            """
-
             raise ParameterError("Base axis cannot be fixed joint!")
 
         elif fixed_joint == 1:
-            # TODO: Somewhere in this block is a bug that causes wrong calculations.
-            """
-            Not sure whether the bug is in the code itself or it is a math problem (wrong formulas)
-            """
+            # TODO: Write more test-cases
 
             theta_1 = angle
 
             # Calculate b
-            theta_z = math.asin(z/pv)
-            theta_b = theta_1 - theta_z
+            theta_tcp = math.asin(z/vp)
+            theta_b = theta_1 - theta_tcp
 
-            b = math.sqrt(self.links[0]**2 + pv**2 - 2*self.links[0]*pv*math.cos(theta_b))
+            b = math.sqrt(self.links[0]**2 + vp**2 - 2*self.links[0]*vp*math.cos(theta_b))
             print("b: " + str(b))
 
             # Calculate theta_2
@@ -125,18 +118,18 @@ class Kinematics:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
             try:
-                theta_pv = math.acos((-pv ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
-                print("Theta_pv: " + str(theta_pv))
+                theta_vp = math.acos((-vp ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
+                print("Theta_vp: " + str(theta_vp))
             except ValueError as e:
-                raise CalculationError("Error while calculating theta_pv! - The point can most likely not be reached.")
+                raise CalculationError("Error while calculating theta_vp! - The point can most likely not be reached.")
 
-            theta_2 = math.pi - theta_l2 - theta_pv
+            theta_2 = math.pi - theta_l2 - theta_vp
             print("Theta_2: " + str(theta_2))
 
             # Calculate theta_3
             try:
                 theta_b2 = math.acos((-b**2 + self.links[1]**2 + self.links[2]**2) / (2*self.links[1]*self.links[2]))
-                print("Theta_b2: " + str(theta_pv))
+                print("Theta_b2: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b2! - The point can most likely not be reached.")
 
@@ -159,18 +152,18 @@ class Kinematics:
 
             # calculate theta_1
             try:
-                theta_b = math.acos((-b**2 + self.links[0]**2 + pv**2) / (2*self.links[0]*pv))
+                theta_b = math.acos((-b**2 + self.links[0]**2 + vp**2) / (2*self.links[0]*vp))
                 print("Theta_b: " + str(theta_b))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b! - The point can most likely not be reached.")
 
             try:
-                theta_z = math.asin(z/pv)
-                print("Theta_z: " + str(theta_z))
+                theta_tcp = math.asin(z/vp)
+                print("Theta_tcp: " + str(theta_tcp))
             except ValueError as e:
-                raise CalculationError("Error while calculating theta_z! - The point can most likely not be reached.")
+                raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
 
-            theta_1 = theta_b + theta_z
+            theta_1 = theta_b + theta_tcp
             print("Theta_1: " + str(theta_1))
 
             # Calculate theta_2
@@ -182,12 +175,12 @@ class Kinematics:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
             try:
-                theta_pv = math.acos((-pv**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
-                print("Theta_pv: " + str(theta_pv))
+                theta_vp = math.acos((-vp**2 + self.links[0]**2 + b**2) / (2*self.links[0]*b))
+                print("Theta_vp: " + str(theta_vp))
             except ValueError as e:
-                raise CalculationError("Error while calculating theta_pv! - The point can most likely not be reached.")
+                raise CalculationError("Error while calculating theta_vp! - The point can most likely not be reached.")
 
-            theta_2 = math.pi - theta_l2 - theta_pv
+            theta_2 = math.pi - theta_l2 - theta_vp
             print("Theta_2: " + str(theta_2))
 
         elif fixed_joint == 4:
@@ -199,8 +192,87 @@ class Kinematics:
         else:
             raise ParameterError("The fixed_joint parameter input is invalid.")
 
-        # Build result_set
         # TODO: theta_1, theta_2 and theta_3 might be referenced before assignment (=dirty)
+        # Build result_set
+        result_set[0] = phi
+        result_set[1] = theta_1
+        result_set[2] = theta_2
+        result_set[3] = theta_3
+
+        return result_set
+
+    def inverse_align(self, x, y, z, alignment):
+        """
+        This calculates all remaining joint angles for the given x, y, z coordinate and grabber alignment
+        This one takes the alignment of the grabber towards the x-axis and uses it as the fixed joint.
+
+        :param x: the x-coordinate
+        :param y: the y-coordinate
+        :param z: the z-coordinate
+        :param alignment: the alignment of the grabber towards the x-axis
+        :return: all joints inverse kinematics result
+        """
+
+        print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
+
+        r, z, phi = self.cartesian_to_cylindric(x, y, z)
+
+        return self.inverse_align_cylindric(r, z, phi, alignment)
+
+    def inverse_align_cylindric(self, r, z, phi, alignment):
+        """
+        This calculates all remaining joint angles for the given r, z, phi coordinate and grabber alignment.
+        This one takes the alignment of the grabber towards the x-axis and uses it as the fixed joint.
+
+        :param r: the radius
+        :param z: the z-coordinate
+        :param phi: the angle of the coordinate (phi)
+        :param alignment: the alignment of the grabber towards the x-axis
+        :return: all joints inverse kinematics result
+        """
+        # TODO: Write test-cases
+
+        print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
+
+        # Move coordinate system to first joint "root" to remove the offset
+        r = r - self.base_offset
+
+        result_set = [0, 0, 0, 0]
+
+        # Vector to the given P
+        vp = math.sqrt(r**2 + z**2)
+        print("Pv: " + str(vp))
+
+        # Calculate the position of the third joint (R3)
+        r3_r = r - (math.cos(alignment) * self.links[2])
+        r3_z = z - (math.sin(alignment) * self.links[2])
+
+        # Vector to R3
+        vr3 = math.sqrt(r3_r ** 2 + r3_z ** 2)
+
+        # Calculate the angle of the vector to the third joint (OVR3)
+        theta_r3 = math.asin(r3_z / r3_r)
+
+        # Calculate the triangle(R1, R2, R3)
+        theta_vr3 = math.sqrt((-vr3**2 + self.links[0] + self.links[1])/(2 * self.links[0] * self.links[1]))
+        theta_l0 = math.sqrt((-self.links[0]**2 + self.links[1]**2 + vr3**2)/(2 * self.links[1] * vr3))
+        theta_l1 = 180 - theta_l0 - theta_vr3
+
+        # Calculate the angle to the given point
+        try:
+            theta_tcp = math.asin(z / vp)
+            print("Theta_tcp: " + str(theta_tcp))
+        except ValueError as e:
+            raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
+
+        # Calculate one of the angles of the triangle(R2, R3, TCP)
+        theta_vtcp = math.sqrt((-vp**2 + vr3**2 + self.links[2]**2)/(2*vr3*self.links[2]))
+
+        theta_1 = theta_tcp + theta_r3 + theta_l1
+        theta_2 = 180 - theta_vr3
+        theta_3 = theta_l0 + theta_vtcp
+
+        # Build result_set
         result_set[0] = phi
         result_set[1] = theta_1
         result_set[2] = theta_2
@@ -215,14 +287,31 @@ class Kinematics:
         :param x: the x-coordinate
         :param y: the y-coordinate
         :param z: the z-coordinate
-        :return: the cylindric coordinate in r, z, phi representation
+        :return: the coordinate in r, z, phi representation
         """
 
         r = math.sqrt(x ** 2 + y ** 2)
-        phi = math.atan(y / x)
+        """
+        atan2(y, x):
+        https://de.wikipedia.org/wiki/Polarkoordinaten#Berechnung_des_Winkels_im_Intervall_.28.E2.88.92.CF.80.2C_.CF.80.5D
+        """
+        phi = math.atan2(y, x)
 
         return r, z, phi
 
+    @staticmethod
+    def cylindric_to_cartesian(r, z, phi):
+        """
+        Converts cylindric coordinates to cartesian coordinates
+        :param r: the radius
+        :param z: the z-coordinate
+        :param phi: the angle of the coordinate (phi)
+        :return: the coordinate in x, y, z representation
+        """
+        x = r * math.cos(phi)
+        y = r * math.sin(phi)
+
+        return x, y, z
 
     @staticmethod
     def round_results(results):
@@ -237,6 +326,46 @@ class Kinematics:
             rounded.append(int((result * 100) + 0.5) / 100.0)
 
         return rounded
+
+
+class WorldCoordinateSystem:
+    """
+    Used to create alternate cartesian coordinate systems that can be placed anywhere in
+    relation to the base coordinate system
+    """
+
+    def __init__(self, x_offset, y_offset, z_offset, theta_x, theta_y, theta_z):
+        """
+        The coordinate system is placed using offsets of the certain coordinate system axis and
+        :param x_offset: the offset of the x-axis
+        :param y_offset: the offset of the y-axis
+        :param z_offset: the offset of the z-axis
+        :param theta_x: the rotation around the x-axis
+        :param theta_y: the rotation around the y-axis
+        :param theta_z: the rotation around the z-axis
+        """
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.z_offset = z_offset
+        self.theta_x = theta_x
+        self.theta_y = theta_y
+        self.theta_z = theta_z
+
+    def cartesian_to_world(self, x, y, z):
+        # TODO
+        pass
+
+    def cylindric_to_world(self, r, z, phi):
+        # TODO
+        pass
+
+    def world_to_cartesian(self, x, y, z):
+        # TODO
+        pass
+
+    def world_to_cylindrical(self, x, y, z):
+        # TODO
+        pass
 
 
 class KinematicsError(Exception):
