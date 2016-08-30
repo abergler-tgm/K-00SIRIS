@@ -2,7 +2,7 @@ import math
 
 import time
 
-from kinematics import Kinematics, KinematicsError
+from kinematics import Kinematics, KinematicsError, WorldCoordinateSystem
 
 
 class Robotarm:
@@ -68,11 +68,16 @@ class Robotarm:
 
         total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
 
-        pos = (total_steps / (2 * math.pi)) + self.min_servo_pos[joint]
+        pos = (total_steps / (2 * math.pi)) * angle + self.min_servo_pos[joint]
 
         # TODO test properly
 
         return pos
+
+    def step_to_angle(self, step, joint):
+        # TODO
+        angle = step    # Placeholder
+        return angle
 
     def move_to_cartesian(self, x, y, z):
         """
@@ -115,12 +120,12 @@ class Robotarm:
         """
         # TODO test properly
 
-        if angles != 5:
+        if len(angles) != 6:
             return False
 
         # Check whether the angles on all joints can be reached
-        for i, angle in enumerate(angles):
-            if not self.validate_angle(angle, i):
+        for joint, angle in enumerate(angles):
+            if not self.validate_angle(angle, joint):
                 return False
 
         return True
@@ -138,6 +143,14 @@ class Robotarm:
     def move_servo_over_time(self, pos, joint, duration):
         # TODO
         pass
+
+    def get_tool_cs(self):
+        angles = []
+        for joint, pos in enumerate(self.joint_pos):
+            angles[joint] = self.step_to_angle(pos, joint)
+
+        x, y, z, theta_x, theta_y, theta_z = self.kinematics.direct(angles)
+        return WorldCoordinateSystem(x, y, z, theta_x, theta_y, theta_z)
 
     def close(self):
         self.client.close()

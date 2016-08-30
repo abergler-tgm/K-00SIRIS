@@ -27,14 +27,17 @@ class Kinematics:
         This calculates cartesian coordinates of the TCP using the given angles
 
         :param angles: angles of all joints
-        :return: the end position
+        :return: the end position (x,y,z) and the grabber align (x_theta, y_theta, z_theta)
         """
         # TODO
         x = 0
         y = 0
         z = 0
+        x_theta = 0
+        y_theta = 0
+        z_theta = 0
 
-        return x, y, z
+        return x, y, z, x_theta, y_theta, z_theta
 
     def direct_cylindric(self, angles):
         """
