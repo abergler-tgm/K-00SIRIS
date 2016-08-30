@@ -55,7 +55,6 @@ class Robotarm:
 
         self.move_to_pos(pos, joint)
 
-
     def angle_to_step(self, angle, joint):
         """
         Calculates the step value of the given angle for the given joint.

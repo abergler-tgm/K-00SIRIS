@@ -67,10 +67,10 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 18, 0, 18
         fixed_joint = 3
-        angle = -2.45
+        angle = 2.45
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 1.36, -2.46, -2.45]
+        expected = [0.0, 1.36, -2.46, 2.45]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -146,14 +146,13 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 35.9, 0, 22.02
         fixed_joint = 1
-        angle = -1.35
+        angle = 1.35
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
-        rounded = self.kinematics.round_results(results)
-
         expected = [0.0, 1.35, -1.1, -1.03]
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
-        self.assertEqual(rounded, expected)
+        self.assertTrue(result)
 
     def test_inverse_too_far(self):
         """
