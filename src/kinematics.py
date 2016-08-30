@@ -211,7 +211,7 @@ class Kinematics:
 
         return result_set
 
-    def inverse_align(self, x, y, z, alignment):
+    def inverse_aligned(self, x, y, z, alignment):
         """
         This calculates all remaining joint angles for the given x, y, z coordinate and grabber alignment
         This one takes the alignment of the grabber towards the x-axis and uses it as the fixed joint.
@@ -227,9 +227,9 @@ class Kinematics:
 
         r, z, phi = self.cartesian_to_cylindric(x, y, z)
 
-        return self.inverse_align_cylindric(r, z, phi, alignment)
+        return self.inverse_aligned_cylindric(r, z, phi, alignment)
 
-    def inverse_align_cylindric(self, r, z, phi, alignment):
+    def inverse_aligned_cylindric(self, r, z, phi, alignment):
         """
         This calculates all remaining joint angles for the given r, z, phi coordinate and grabber alignment.
         This one takes the alignment of the grabber towards the x-axis and uses it as the fixed joint.

@@ -201,7 +201,7 @@ class AlignedKinematicsTest(unittest.TestCase):
 
         x, y, z = 35.01157, 0, 25.96866
         alignment = 0
-        results = self.kinematics.inverse_align(x, y, z, alignment)
+        results = self.kinematics.inverse_aligned(x, y, z, alignment)
         print(results)
         expected = [0, 1.55, -1.55, 0]
 
@@ -220,7 +220,7 @@ class AlignedKinematicsTest(unittest.TestCase):
 
         x, y, z = 24, 0, 40
         alignment = -0.2
-        results = self.kinematics.inverse_align(x, y, z, alignment)
+        results = self.kinematics.inverse_aligned(x, y, z, alignment)
         print(results)
         expected = [0, 1.6735, -0.8171, -1.0564]
 
@@ -239,7 +239,7 @@ class AlignedKinematicsTest(unittest.TestCase):
 
         x, y, z = 500, 500, 500
         alignment = 0
-        self.assertRaises(CalculationError, self.kinematics.inverse_align, x, y, z, alignment)
+        self.assertRaises(CalculationError, self.kinematics.inverse_aligned, x, y, z, alignment)
 
 
 class CoordinatesTest(unittest.TestCase):

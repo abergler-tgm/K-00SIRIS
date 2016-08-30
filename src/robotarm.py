@@ -33,9 +33,6 @@ class Robotarm:
         self.min_servo_pos = min_servo_pos
         self.max_servo_pos = max_servo_pos
 
-        self.fixed_joint = 3        # hard coded for now
-        self.fj_angle = 0           # hard coded for now
-
         # Base, axis 1, axis 2, axis 3, axis 4, grabber
         self.joint_pos = [0.0, 1.51, -1.51, 0.0, 0.0, 0.0]
 
@@ -79,7 +76,7 @@ class Robotarm:
         angle = step    # Placeholder
         return angle
 
-    def move_to_cartesian(self, x, y, z):
+    def move_to_cartesian(self, x, y, z, fixed_joint, fj_angle):
         """
         Moves the robotarm to the given cartesian coordinates.
 
@@ -89,8 +86,8 @@ class Robotarm:
         """
 
         try:
-            angles = self.kinematics.inverse(x, y, z, self.fixed_joint, self.fj_angle)
-            self.move_direct(angles)
+            angles = self.kinematics.inverse(x, y, z, fixed_joint, fj_angle)
+            self.move_to_config(angles)
         except KinematicsError as ke:
             print("Position cannot be reached: " + ke.message)
 
@@ -98,7 +95,27 @@ class Robotarm:
             print("The kinematics module was able to calculate a position, but the servos are not able to reach it: " +
                   oore.message)
 
-    def move_direct(self, angles):
+    def move_to_cartesian_aligned(self, x, y, z, alignment):
+        """
+        Moves the robotarm to the given cartesian coordinates.
+        This one takes the alignment of the grabber towards the x-axis and uses it as the fixed joint.
+
+        :param x: the x-coordinate
+        :param y: the y-coordinate
+        :param z: the z-coordinate
+        """
+
+        try:
+            angles = self.kinematics.inverse_aligned(x, y, z, alignment)
+            self.move_to_config(angles)
+        except KinematicsError as ke:
+            print("Position cannot be reached: " + ke.message)
+
+        except OutOfReachError as oore:
+            print("The kinematics module was able to calculate a position, but the servos are not able to reach it: " +
+                  oore.message)
+
+    def move_to_config(self, angles):
         """
         Move the robotarm to the given configuration.
 
