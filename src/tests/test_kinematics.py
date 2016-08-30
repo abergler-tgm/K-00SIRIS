@@ -30,7 +30,7 @@ class KinematicsTest(unittest.TestCase):
         angle = 0
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
-        expected = [0.0, 1.51, 1.51, 0.0]
+        expected = [0.0, 1.51, -1.51, 0.0]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -47,10 +47,10 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 50, 0, 0
         fixed_joint = 3
-        angle = 0.79
+        angle = -0.79
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 0.60, 0.80, 0.79]
+        expected = [0.0, 0.60, -0.80, -0.79]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -70,7 +70,7 @@ class KinematicsTest(unittest.TestCase):
         angle = -2.45
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 1.36, 2.46, -2.45]
+        expected = [0.0, 1.36, -2.46, -2.45]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -87,10 +87,10 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 24, 0, 10
         fixed_joint = 3
-        angle = -0.75
+        angle = 0.75
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 1.73, 2.5, -0.75]
+        expected = [0.0, 1.73, -2.5, 0.75]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -107,10 +107,10 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 24, 0, 40
         fixed_joint = 3
-        angle = 0.65
+        angle = -0.65
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 1.78, 1.08, 0.65]
+        expected = [0.0, 1.78, -1.08, -0.65]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -127,10 +127,10 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 0, 0, 50
         fixed_joint = 3
-        angle = -1.5
+        angle = 1.5
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
         print(results)
-        expected = [0.0, 1.85, 1.06, -1.5]
+        expected = [0.0, 1.85, -1.06, 1.5]
 
         result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
 
@@ -146,12 +146,12 @@ class KinematicsTest(unittest.TestCase):
 
         x, y, z = 35.9, 0, 22.02
         fixed_joint = 1
-        angle = 1.35
+        angle = -1.35
         results = self.kinematics.inverse(x, y, z, fixed_joint, angle)
 
         rounded = self.kinematics.round_results(results)
 
-        expected = [0.0, 1.35, 1.1, 1.03]
+        expected = [0.0, 1.35, -1.1, -1.03]
 
         self.assertEqual(rounded, expected)
 

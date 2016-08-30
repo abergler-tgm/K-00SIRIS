@@ -36,7 +36,14 @@ class Robotarm:
         self.fixed_joint = 3        # hard coded for now
         self.fj_angle = 0           # hard coded for now
 
+        # Base, axis 1, axis 2, axis 3, axis 4, grabber
+        self.joint_pos = [0.0, 1.51, -1.51, 0.0, 0.0, 0.0]
+
         self.kinematics = Kinematics(self.links, self.base_offset)
+
+    def move_to_pos(self, pos, joint):
+        self.client.set_servo(joint, True, pos)
+        self.joint_pos[joint] = pos
 
     def move_to_angle(self, angle, joint):
         """
@@ -46,7 +53,8 @@ class Robotarm:
         """
         pos = self.angle_to_step(angle, joint)
 
-        self.client.set_servo(joint, True, pos)
+        self.move_to_pos(pos, joint)
+
 
     def angle_to_step(self, angle, joint):
         """
