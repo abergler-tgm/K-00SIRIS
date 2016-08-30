@@ -1,6 +1,8 @@
 import math
 
-from kinematics import Kinematics
+import time
+
+from kinematics import Kinematics, KinematicsError
 
 
 class Robotarm:
@@ -14,7 +16,7 @@ class Robotarm:
     2000 Steps per Servo
     """
 
-    def __init__(self, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos, fixed_joint=3, fj_angle=0):
+    def __init__(self, client, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos):
         """
         Constructor - used for initialization
 
@@ -23,14 +25,16 @@ class Robotarm:
         """
 
         # Params
+        self.client = client
         self.links = links
         self.base_offset = base_offset
         self.min_angles = min_angles
         self.max_angles = max_angles
         self.min_servo_pos = min_servo_pos
         self.max_servo_pos = max_servo_pos
-        self.fixed_joint = fixed_joint
-        self.fj_angle = fj_angle
+
+        self.fixed_joint = 3        # hard coded for now
+        self.fj_angle = 0           # hard coded for now
 
         self.kinematics = Kinematics(self.links, self.base_offset)
 
@@ -40,12 +44,24 @@ class Robotarm:
         :param angle: the angle
         :param joint: the joint
         """
+        pos = self.angle_to_step(angle, joint)
+
+        self.client.set_servo(joint, True, pos)
+
+    def angle_to_step(self, angle, joint):
+        """
+        Calculates the step value of the given angle for the given joint.
+        Servos have 2048 steps and this maps the angle to those
+        :param angle: the angle in radiant representation
+        :param joint: the joint that should be used
+        :return: the servo-position in steps
+        """
         if self.min_angles[joint] < angle < self.max_angles[joint]:
-            pass    # TODO: raise error
+            raise OutOfReachError
 
-        total_steps = (self.max_servo_pos[joint]-self.min_servo_pos[joint])
+        total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
 
-        pos = (total_steps/(2*math.pi)) + self.min_servo_pos[joint]
+        pos = (total_steps / (2 * math.pi)) + self.min_servo_pos[joint]
 
         # TODO test properly
 
@@ -60,13 +76,15 @@ class Robotarm:
         :param z: the z-coordinate
         """
 
-        angles = self.kinematics.inverse(x, y, z, self.fixed_joint, self.fj_angle)
+        try:
+            angles = self.kinematics.inverse(x, y, z, self.fixed_joint, self.fj_angle)
+            self.move_direct(angles)
+        except KinematicsError as ke:
+            print("Position cannot be reached: " + ke.message)
 
-        # TODO
-
-        # exception handling
-        # validate
-        # move servos to angles
+        except OutOfReachError as oore:
+            print("The kinematics module was able to calculate a position, but the servos are not able to reach it: " +
+                  oore.message)
 
     def move_direct(self, angles):
         """
@@ -75,11 +93,11 @@ class Robotarm:
         :param angles: the angles of all joints
         """
 
-        # TODO
-
-        # validate
-        # move servos to angles
-        pass
+        if self.validate_configuration(angles):
+            for index, angle in angles:
+                self.move_to_angle(index, angles[index])
+        else:
+            raise OutOfReachError("The given configuration cannot be reached!")
 
     def validate_configuration(self, angles):
         """
@@ -88,6 +106,7 @@ class Robotarm:
         :param angles: the angles of all joints
         :return: True if the given configuration is reachable, else: False
         """
+        # TODO test properly
 
         if angles != 5:
             return False
@@ -109,8 +128,32 @@ class Robotarm:
         """
         return self.min_angles[joint] < angle < self.max_angles[joint]
 
+    def move_servo_over_time(self, pos, joint, duration):
+        # TODO
+        pass
+
+    def close(self):
+        self.client.close()
+
 
 class Joint:
-
     def __init__(self, ):
         pass
+
+
+class RobotarmError(Exception):
+    """
+    Is thrown when an error occurs within the Robotarm module
+    """
+
+    def __init__(self, message):
+        """
+        Initializes the exception
+        :param message: explanation of the error
+        """
+
+        self.message = message
+
+
+class OutOfReachError(RobotarmError):
+    pass

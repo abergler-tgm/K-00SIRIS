@@ -2,29 +2,19 @@ import unittest
 
 from kinematics import Kinematics, CalculationError, ParameterError, WorldCoordinateSystem
 
+"""
+This module tests the kinematics module
+"""
 
 class KinematicsTest(unittest.TestCase):
     """
-    Tests the kinematics class module
+    Tests inverse kinematics
     """
 
     def setUp(self):
         print("<Setup START>")
         links = [26, 22, 12.5]
         self.kinematics = Kinematics(links, 0)
-
-    def test_round(self):
-        """
-        Tests the round function
-        """
-        print("<Test Round START>")
-        to_round = [1.8329342, 1.24351622342, 0.2481955, 4.35892392]
-
-        rounded = self.kinematics.round_results(to_round)
-
-        expected = [1.83, 1.24, 0.25, 4.36]
-
-        self.assertEqual(rounded, expected)
 
     def test_inverse_kuka_initial(self):
         """
@@ -190,9 +180,72 @@ class KinematicsTest(unittest.TestCase):
 
         self.assertRaises(ParameterError, self.kinematics.inverse, x, y, z, fixed_joint, 0)
 
+
+class AlignedKinematicsTest(unittest.TestCase):
+    """
+    Tests aligned kinematics
+    """
+
+    def setUp(self):
+        print("<Setup START>")
+        links = [26, 22, 12.5]
+        self.kinematics = Kinematics(links, 0)
+
+    def test_inverse_aligned_kuka_initial(self):
+        """
+        Tests the following aligned inverse kinematics problem:
+        1) "rear low" Axis 3 fixed:
+            0 on base, 1.73 on joint 1, 2.50 on joint 2, -0.75 on joint 3, 0 on joint 4:
+            24, 0, 10
+        """
+        print("<Test aligned kuka initial START>")
+
+        x, y, z = 35.01157, 0, 25.96866
+        alignment = 0
+        results = self.kinematics.inverse_align(x, y, z, alignment)
+        print(results)
+        expected = [0, 1.55, -1.55, 0]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_aligned_rear_high(self):
+        """
+        Tests the following aligned inverse kinematics problem:
+        1) "rear low" Axis 3 fixed:
+            0 on base, 1.6735 on joint 1, -0.8171 on joint 2, -1.0564 on joint 3, 0 on joint 4:
+            24, 0, 10
+        """
+        print("<Test aligned kuka initial START>")
+
+        x, y, z = 24, 0, 40
+        alignment = -0.2
+        results = self.kinematics.inverse_align(x, y, z, alignment)
+        print(results)
+        expected = [0, 1.6735, -0.8171, -1.0564]
+
+        result = all((abs(x - y) < 0.01 for x, y in zip(results, expected)))
+
+        self.assertTrue(result)
+
+    def test_inverse_align_too_far(self):
+        """
+        Tests the following inverse kinematics problem:
+        11) "Way too far":
+            not reachable
+            500, 500, 500
+        """
+        print("<Test Inverse too far START>")
+
+        x, y, z = 500, 500, 500
+        alignment = 0
+        self.assertRaises(CalculationError, self.kinematics.inverse_align, x, y, z, alignment)
+
+
 class CoordinatesTest(unittest.TestCase):
     """
-    Tests the kinematics module
+    Tests coordinate systems
     """
     def setUp(self):
         # TODO
@@ -204,3 +257,24 @@ class CoordinatesTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class KinematicsUtilsTest(unittest.TestCase):
+
+    def setUp(self):
+        print("<Setup START>")
+        links = [26, 22, 12.5]
+        self.kinematics = Kinematics(links, 0)
+
+    def test_round(self):
+        """
+        Tests the round function
+        """
+        print("<Test Round START>")
+        to_round = [1.8329342, 1.24351622342, 0.2481955, 4.35892392]
+
+        rounded = Kinematics.round_results(to_round)
+
+        expected = [1.83, 1.24, 0.25, 4.36]
+
+        self.assertEqual(rounded, expected)

@@ -243,6 +243,7 @@ class Kinematics:
 
         # Move coordinate system to first joint "root" to remove the offset
         r = r - self.base_offset
+        print("new r: " + str(r))
 
         result_set = [0, 0, 0, 0]
 
@@ -253,17 +254,25 @@ class Kinematics:
         # Calculate the position of the third joint (R3)
         r3_r = r - (math.cos(alignment) * self.links[2])
         r3_z = z - (math.sin(alignment) * self.links[2])
+        print("Point R3: " + str(r3_r) + "/" + str(r3_z))
 
         # Vector to R3
         vr3 = math.sqrt(r3_r ** 2 + r3_z ** 2)
+        print("Vector to R3: " + str(vr3))
 
         # Calculate the angle of the vector to the third joint (OVR3)
-        theta_r3 = math.asin(r3_z / r3_r)
+        theta_r3 = math.asin(r3_z / vr3)
+        print("Theta_r3: " + str(theta_r3))
 
         # Calculate the triangle(R1, R2, R3)
-        theta_vr3 = math.sqrt((-vr3 ** 2 + self.links[0] + self.links[1]) / (2 * self.links[0] * self.links[1]))
-        theta_l0 = math.sqrt((-self.links[0] ** 2 + self.links[1] ** 2 + vr3 ** 2) / (2 * self.links[1] * vr3))
-        theta_l1 = 180 - theta_l0 - theta_vr3
+        theta_vr3 = math.acos((-vr3**2 + self.links[0]**2 + self.links[1]**2) / (2 * self.links[0] * self.links[1]))
+        print("Theta_vr3: " + str(theta_vr3))
+
+        theta_l0 = math.acos((-self.links[0]**2 + self.links[1]**2 + vr3**2) / (2 * self.links[1] * vr3))
+        print("Theta_l0: " + str(theta_l0))
+
+        theta_l1 = math.pi - theta_l0 - theta_vr3
+        print("Theta_l1: " + str(theta_l1))
 
         # Calculate the angle to the given point
         try:
@@ -272,12 +281,22 @@ class Kinematics:
         except ValueError as e:
             raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
 
-        # Calculate one of the angles of the triangle(R2, R3, TCP)
-        theta_vtcp = math.sqrt((-vp ** 2 + vr3 ** 2 + self.links[2] ** 2) / (2 * vr3 * self.links[2]))
+        # Calculate 2 angles of the triangle(P0, R3, TCP)
+        theta_vtcp = math.acos((-vp**2 + vr3**2 + self.links[2]**2) / (2 * vr3 * self.links[2]))
+        print("Theta_vtcp: " + str(theta_vtcp))
 
-        theta_1 = theta_tcp + theta_r3 + theta_l1
-        theta_2 = 180 - theta_vr3
-        theta_3 = theta_l0 + theta_vtcp
+        theta_l2 = math.acos((-self.links[2]**2 + vp**2 + vr3**2) / (2 * vp * vr3))
+        print("Theta_l2: " + str(theta_l2))
+
+        # Calculate joint angles
+        theta_1 = theta_tcp + theta_l2 + theta_l1
+        print("Theta_1: " + str(theta_1))
+
+        theta_2 = -(math.pi - theta_vr3)
+        print("Theta_2: " + str(theta_2))
+
+        theta_3 = -(math.pi - (theta_l0 + theta_vtcp))
+        print("Theta_3: " + str(theta_3))
 
         # Build result_set
         result_set[0] = phi
@@ -288,12 +307,26 @@ class Kinematics:
         return result_set
 
     def add_world_cs(self, name, world):
+        """
+        Adds a new world coordinate system
+        :param name: the name of the system
+        :param world: the new world coordinate system
+        """
         self.world_cs[name] = world
 
     def remove_world_cs(self, name):
+        """
+        Removes a world coordinate system
+        :param name: the name of the system
+        """
         self.world_cs.pop(name)
 
     def get_world_cs(self, name):
+        """
+        Returns a world coordinate system
+        :param name: the name of the system
+        :return: the world coordinate system
+        """
         return self.world_cs[name]
 
     @staticmethod
@@ -421,7 +454,7 @@ class WorldCoordinateSystem:
         """
         Converts from base coordinates into world coordinates
         :param x: the x-coordinate (base coordinate)
-        :param y: the y-coordinate (basecoordinate)
+        :param y: the y-coordinate (base coordinate)
         :param z: the z-coordinate (base coordinate)
         :return: The world x, y, z coordinates.
         """
