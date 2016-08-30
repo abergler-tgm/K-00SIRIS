@@ -139,19 +139,16 @@ class Robotarm:
     def move_servo_over_time(self, pos, joint, duration):
 
         """
-        startposition = endposition
-        endposition = pos
+        startposition = self.joint_pos[joint]
         starttime = time.time()*1000
         movement = pos - startposition
 
-        while starttime + duration > time.time() * 1000 :
-
-            if endposition != momentposition and :
-
-            momentposition = startposition + (((millis() - starttime) / (float)endtime) * x)
+        i = 1
+        while starttime + duration > time.time() * 1000 and pos != self.joint_pos[joint]:
+            if starttime + abs(duration/movement) * i < time.time()*1000:
+                self.move_to_pos((startposition + i), joint)
+                i += 1
         """
-        pass
-
     def close(self):
         self.client.close()
 
