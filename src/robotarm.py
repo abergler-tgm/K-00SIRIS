@@ -33,10 +33,14 @@ class Robotarm:
         self.min_servo_pos = min_servo_pos
         self.max_servo_pos = max_servo_pos
 
+        # Move to initial position
         # Base, axis 1, axis 2, axis 3, axis 4, grabber
         self.joint_pos = [0.0, 1.51, -1.51, 0.0, 0.0, 0.0]
 
         self.kinematics = Kinematics(self.links, self.base_offset)
+
+    def move_to_init(self):
+        self.move_to_config([0.0, 1.51, -1.51, 0.0, 0.0, 0.0])
 
     def move_to_pos(self, pos, joint):
         self.client.set_servo(joint, True, pos)
@@ -72,17 +76,25 @@ class Robotarm:
         return pos
 
     def step_to_angle(self, step, joint):
-        # TODO
-        angle = step    # Placeholder
+        if self.min_servo_pos[joint] < step < self.max_servo_pos[joint]:
+            raise OutOfReachError
+
+        total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
+
+        angle = ((2 * math.pi) / total_steps) * (step - self.min_servo_pos[joint])
+
         return angle
 
     def move_to_cartesian(self, x, y, z, fixed_joint, fj_angle):
         """
         Moves the robotarm to the given cartesian coordinates.
 
+
         :param x: the x-coordinate
         :param y: the y-coordinate
         :param z: the z-coordinate
+        :param fixed_joint:
+        :param fj_angle:
         """
 
         try:
@@ -123,8 +135,8 @@ class Robotarm:
         """
 
         if self.validate_configuration(angles):
-            for index, angle in angles:
-                self.move_to_angle(index, angles[index])
+            cfg = [(joint, self.angle_to_step(angle, joint)) for joint, angle in angles]
+            self.client.set_multi_servo(cfg)
         else:
             raise OutOfReachError("The given configuration cannot be reached!")
 
@@ -137,8 +149,8 @@ class Robotarm:
         """
         # TODO test properly
 
-        if len(angles) != 6:
-            return False
+        if len(angles) < 4:
+            return False    # the K-00SIRIS needs at least 4 joints for a kinematic configuration
 
         # Check whether the angles on all joints can be reached
         for joint, angle in enumerate(angles):
