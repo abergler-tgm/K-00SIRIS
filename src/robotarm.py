@@ -158,8 +158,15 @@ class Robotarm:
         return self.min_angles[joint] < angle < self.max_angles[joint]
 
     def move_servo_over_time(self, pos, joint, duration):
-        # TODO
-        pass
+
+        startposition = self.joint_pos[joint]
+        starttime = time.time()*1000
+        movement = pos - startposition
+
+        while starttime + duration > time.time() * 1000 and pos != self.joint_pos[joint]:
+            steps = round((time.time() - starttime) / (duration / movement)) + 1
+            if starttime + abs(duration / movement) * steps < time.time()*1000:
+                self.move_to_pos((startposition + steps), joint)
 
     def get_tool_cs(self):
         angles = []
