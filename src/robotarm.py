@@ -43,8 +43,11 @@ class Robotarm:
         self.move_to_config([0.0, 1.51, -1.51, 0.0, 0.0, 0.0])
 
     def move_to_pos(self, pos, joint):
-        self.client.set_servo(joint, True, pos)
-        self.joint_pos[joint] = pos
+        if 0 <= pos <= 2000:
+            self.client.set_servo(joint, True, int(pos))
+            self.joint_pos[joint] = pos
+        else:
+            raise OutOfReachError("Position out of reach! (Range 0 to 2000): " + str(pos))
 
     def move_to_angle(self, angle, joint):
         """
@@ -150,7 +153,7 @@ class Robotarm:
         # TODO test properly
 
         if len(angles) < 4:
-            return False    # the K-00SIRIS needs at least 4 joints for a kinematic configuration
+            return False  # the K-00SIRIS needs at least 4 joints for a kinematic configuration
 
         # Check whether the angles on all joints can be reached
         for joint, angle in enumerate(angles):
@@ -171,14 +174,25 @@ class Robotarm:
 
     def move_servo_over_time(self, pos, joint, duration):
 
-        startposition = self.joint_pos[joint]
-        starttime = time.time()*1000
-        movement = pos - startposition
+        start_position = self.joint_pos[joint]
+        movement = pos - start_position
 
-        while starttime + duration > time.time() * 1000 and pos != self.joint_pos[joint]:
-            steps = round((time.time() - starttime) / (duration / movement)) + 1
-            if starttime + abs(duration / movement) * steps < time.time()*1000:
-                self.move_to_pos((startposition + steps), joint)
+        if movement == 0:
+            return  # Already at position
+
+        time_per_step = abs(duration / movement)
+        start_time = time.time()
+
+        while start_time + duration > time.time() and pos != self.joint_pos[joint]:
+            crnt_step = round((time.time() - start_time) / time_per_step)
+            self.move_to_pos(start_position + crnt_step * math.copysign(1, movement), joint)
+            time.sleep(0.001)   # To prevent from overload
+
+        """
+        Not very beautiful, but this will ensure that the pos will definitely be reached even
+        if there is an issue with the duration/loop
+        """
+        self.move_to_pos(pos, joint)
 
     def get_tool_cs(self):
         angles = []

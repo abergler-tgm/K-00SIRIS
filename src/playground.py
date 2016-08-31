@@ -32,8 +32,29 @@ def main():
         robotarm = Robotarm(client, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos)
         print("Robotarm init!")
 
-        cfg = [(0, True, 1000), (1, True, 1000)]
-        client.set_multi_servo(cfg)
+        #client.set_multi_servo([(0, False, 0), (1, False, 0), (2, False, 0), (3, False, 0)])
+
+        robotarm.move_to_pos(2000, 0)
+
+        #time.sleep(0.5)
+
+        print("Start")
+        robotarm.move_servo_over_time(0, 0, 10)
+        print("End")
+
+        robotarm.move_servo_over_time(2000, 0, 5)
+
+        robotarm.move_servo_over_time(0, 0, 2)
+
+        robotarm.move_servo_over_time(2000, 0, 1)
+
+        robotarm.move_servo_over_time(0, 0, 0.5)
+
+        robotarm.move_servo_over_time(2000, 0, 0.1)
+
+        # cfg = [(0, True, 1000), (1, True, 1000)]
+        # client.set_multi_servo(cfg)
+
         # do some tests
 
 if __name__ == "__main__":
