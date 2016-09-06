@@ -14,6 +14,8 @@ class Robotarm:
     def __init__(self, client, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos):
         """
         Constructor - used for initialization
+        move_to_init should be called after initialization to move the robotarm to the initial position.
+        Servos can only track position after move_to_init has been called! (=High risk of unexpected behaviour!)
 
         :param links: the lengths of all links in an array
         :param base_offset: the distance in between the center of the base axis and the first joint
@@ -28,10 +30,9 @@ class Robotarm:
         self.min_servo_pos = min_servo_pos
         self.max_servo_pos = max_servo_pos
 
-        # Move to initial position
+        # Set to initial position - move_to_init should be called after initialization!
         # Base, axis 1, axis 2, axis 3, axis 4, grabber
-        self.joint_pos = [0.0, 1.51, -1.51, 0.0, 0.0, 0.0]
-        self.move_to_init()
+        self.servo_pos = [0, 0, 0, 0, 0, 0]
 
         self.kinematics = Kinematics(self.links, self.base_offset)
 
@@ -41,6 +42,7 @@ class Robotarm:
         """
         print("Moving to init!")
         self.move_to_config([0.0, 1.51, -1.51, 0.0, 0.0, 0.0])
+        print("Successfully moved to init!")
 
     def move_to_pos(self, pos, joint):
         """
@@ -49,9 +51,9 @@ class Robotarm:
         :param joint: the joint that will be used
         :raise OutOfReachError: if the given position cannot be reached
         """
-        if 0 <= pos <= 2000:    # TODO: maybe this can be changed to servo_min/max but this has to be checked properly
+        if 0 <= pos <= 2000:  # TODO: maybe this can be changed to servo_min/max but this has to be checked properly
             self.client.set_servo(joint, True, int(pos))
-            self.joint_pos[joint] = pos
+            self.servo_pos[joint] = pos
         else:
             raise OutOfReachError("Position out of reach! (Range 0 to 2000): " + str(pos))
 
@@ -77,22 +79,17 @@ class Robotarm:
             raise OutOfReachError
 
         if self.min_angles[joint] == self.max_angles[joint]:
-            return 0    # if no min/max angle is set for the servo, position does not matter
+            return 0  # if no min/max angle is set for the servo, position does not matter
 
-        total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
-        total_angle = abs(self.min_angles[joint]) + abs(self.max_angles[joint])
+        total_steps = self.max_servo_pos[joint] - self.min_servo_pos[joint]
+        total_angle = self.max_angles[joint] - self.min_angles[joint]
 
-        print("ANGLE to STEP: Total steps: " + str(total_steps) + " Total angle: " + str(total_angle))
-
-        angle += abs(self.min_angles[joint])
-        print("Angle after correction: " + str(angle))
-
-        # TODO: Maybe proper rounding is worth it
-        pos = int((total_steps / total_angle) * angle + self.min_servo_pos[joint])
-
-        print("Calculated pos: " + str(pos))
-        # TODO: Test properly
-        # TODO: Probably very buggy
+        """
+        >Move angle to 0 ("remove" min)
+        >Calculate steps/angle ratio
+        >Add min servo pos (offset)
+        """
+        pos = int((total_steps / total_angle) * (angle - self.min_angles[joint]) + self.min_servo_pos[joint])
 
         return pos
 
@@ -155,12 +152,19 @@ class Robotarm:
         """
 
         if self.validate_configuration(angles):
-            cfg = [(joint, True, self.angle_to_step(angle, joint)) for joint, angle in enumerate(angles)]
+            positions = [self.angle_to_step(angle, joint) for joint, angle in enumerate(angles)]
+            cfg = [(joint, True, position) for joint, position in enumerate(positions)]
             print("Moving to:")
             # TODO: Just using the first 4 axis for now([:4]). Needs a 2nd hedgehog for more
             print(cfg[:4])
             self.client.set_multi_servo(cfg[:4])
             print("Movement started, should be done very soon!")
+
+            # Update positions
+            for index in range(len(positions), 6):
+                positions.append(self.servo_pos[index])
+
+            self.servo_pos = positions
         else:
             raise OutOfReachError("The given configuration cannot be reached!")
 
@@ -191,7 +195,8 @@ class Robotarm:
         """
 
         print("Validating: Joint: " + str(joint) + " Angle: " + str(angle))
-        if self.min_angles[joint] <= angle <= self.max_angles[joint] or self.min_angles[joint] >= angle >= self.max_angles[joint]:
+        if self.min_angles[joint] <= angle <= self.max_angles[joint] or self.min_angles[joint] >= angle >= \
+                self.max_angles[joint]:
             print("Angle is valid!")
             return True
         else:
@@ -205,7 +210,7 @@ class Robotarm:
         :param joint: the joint that should be moved
         :param duration: the duration that the movement should take
         """
-        start_position = self.joint_pos[joint]
+        start_position = self.servo_pos[joint]
         movement = pos - start_position
 
         print("Starting!")
@@ -219,16 +224,57 @@ class Robotarm:
         time_per_step = abs(duration / movement)
         start_time = time.time()
 
-        while start_time + duration > time.time() and pos != self.joint_pos[joint]:
+        while start_time + duration > time.time() and pos != self.servo_pos[joint]:
             crnt_step = round((time.time() - start_time) / time_per_step)
             self.move_to_pos(start_position + crnt_step * math.copysign(1, movement), joint)
-            time.sleep(0.05)  # To prevent from overload
+            time.sleep(0.001)  # To prevent from overload
 
+    def move_multi_over_time(self, positions, duration):
         """
-        Not very beautiful, but this will ensure that the pos will definitely be reached even
-        if there is an issue with the duration/loop
+        Moves the joints to the given position in exactly the given duration.
+        If less than 6 positions are given, the first x joints are moved, where x is the number of given positions
+        :param positions: the positions that the servos should move to
+        :param duration: the duration that the movement should take
         """
-        self.move_to_pos(pos, joint)
+
+        if len(positions) < 1 or len(positions) > 6:
+            raise OutOfReachError("1-6 positions required!")
+
+        print("Starting procedure!")
+
+        start_positions = self.servo_pos  # might have to copy array here
+        print("List of start positions:")
+        print(start_positions)
+
+        movements = [pos - self.servo_pos[joint] for joint, pos in enumerate(positions)]
+        print("List of movements:")
+        print(movements)
+
+        # If movement = 0 -> Don't move: Set times_per_step to 0 and check for 0 when calculating crnt step
+        times_per_step = [abs(duration / movement) if movement != 0 else 0 for movement in movements]
+
+        start_time = time.time()
+
+        while start_time + duration > time.time():
+            # If time_per_step = 0 -> Movement = 0 -> Stay at position
+            crnt_steps = [
+                round((time.time() - start_time) / time_per_step) if time_per_step != 0 else 0 for
+                joint, time_per_step in enumerate(times_per_step)]
+
+            cfg = [(joint, True, int(start_positions[joint] + crnt_step * math.copysign(1, movements[joint]))) for
+                   joint, crnt_step in enumerate(crnt_steps)]
+
+            # TODO: Just using the first 4 axis for now([:4]). Needs a 2nd hedgehog for more
+            self.client.set_multi_servo(cfg[:4])
+
+            time.sleep(0.001)  # To prevent from overload
+
+        # Update positions
+        for index in range(len(positions), 6):
+            positions.append(self.servo_pos[index])
+
+        self.servo_pos = positions
+        print("move multi over time - done")
 
     def get_tool_cs(self):
         """
@@ -236,7 +282,7 @@ class Robotarm:
         :return: the tool coordinate system as WorldCoordinateSystem
         """
         angles = []
-        for joint, pos in enumerate(self.joint_pos):
+        for joint, pos in enumerate(self.servo_pos):
             angles[joint] = self.step_to_angle(pos, joint)
 
         x, y, z, theta_x, theta_y, theta_z = self.kinematics.direct(angles)
@@ -247,6 +293,50 @@ class Robotarm:
         Turns off all servos
         """
         self.client.set_multi_servo([(0, False, 0), (1, False, 0), (2, False, 0), (3, False, 0)])
+
+
+class RobotarmFactory:
+    """
+    Creates preset robotarm objects
+    """
+
+    @staticmethod
+    def get_00siris_default(client):
+        """
+        Returns a default robotarm object that can be used if the default 00SIRIS (2016) is used.
+        It is still necessary to move to the initial position using move_to_init() before actually moving the robotarm!
+
+        Angles:
+        Base: 0 - 450° = 0 - 2.5*math.pi
+        Axis1: 32 - + 145° = ~+/- 60° = 0.5026548245744 - 2.277654673853
+        Axis2: -163° - 0 = ~+/- 90° =  -2.560398012676 - 0
+        Axis3: -63 - 46° = ~+/- 45° = -0.9896016858808 - 0.7225663103257
+
+        Steps (low angle, high angle):
+        Base: ~20 - 1980
+        Axis1: 2000 - 0
+        Axis2: 1810 - ~100
+        Axis3: 1920 - ~20
+        Axis4: TODO (-> 0)
+        Grabber: TODO (-> 0)
+        :return:
+        """
+        # TODO: Improve precision
+        links = [26, 22, 12.5]
+        base_offset = 5.5
+        min_angles = [0, 0.5026548245744, -2.560398012676, -0.9896016858808, 0, 0]
+        max_angles = [2.5 * math.pi, 2.277654673853, 0, 0.7225663103257, 0, 0]
+        min_servo_pos = [0, 2000, 1810, 1920, 0, 0]
+        max_servo_pos = [1980, 0, 100, 20, 0, 0]
+        links = [26, 22, 12.5]
+        base_offset = 5.5
+        min_angles = [0, 0.5026548245744, -2.560398012676, -0.9896016858808, 0, 0]
+        max_angles = [2.5 * math.pi, 2.277654673853, 0, 0.7225663103257, 0, 0]
+        min_servo_pos = [0, 2000, 1810, 1920, 0, 0]
+        max_servo_pos = [1980, 0, 100, 20, 0, 0]
+
+        robotarm = Robotarm(client, links, base_offset, min_angles, max_angles, min_servo_pos, max_servo_pos)
+        return robotarm
 
 
 class RobotarmError(Exception):
