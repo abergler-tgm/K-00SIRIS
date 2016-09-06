@@ -1,5 +1,4 @@
 import math
-
 import time
 
 from kinematics import Kinematics, KinematicsError, WorldCoordinateSystem
@@ -32,6 +31,7 @@ class Robotarm:
         # Move to initial position
         # Base, axis 1, axis 2, axis 3, axis 4, grabber
         self.joint_pos = [0.0, 1.51, -1.51, 0.0, 0.0, 0.0]
+        self.move_to_init()
 
         self.kinematics = Kinematics(self.links, self.base_offset)
 
@@ -39,6 +39,7 @@ class Robotarm:
         """
         Moves the robotarm to the initial position
         """
+        print("Moving to init!")
         self.move_to_config([0.0, 1.51, -1.51, 0.0, 0.0, 0.0])
 
     def move_to_pos(self, pos, joint):
@@ -48,7 +49,7 @@ class Robotarm:
         :param joint: the joint that will be used
         :raise OutOfReachError: if the given position cannot be reached
         """
-        if 0 <= pos <= 2000:
+        if 0 <= pos <= 2000:    # TODO: maybe this can be changed to servo_min/max but this has to be checked properly
             self.client.set_servo(joint, True, int(pos))
             self.joint_pos[joint] = pos
         else:
@@ -72,13 +73,24 @@ class Robotarm:
         :param joint: the joint that should be used
         :return: the servo-position in steps
         """
-        if self.min_angles[joint] < angle < self.max_angles[joint]:
+        if not self.validate_angle(angle, joint):
             raise OutOfReachError
 
+        if self.min_angles[joint] == self.max_angles[joint]:
+            return 0    # if no min/max angle is set for the servo, position does not matter
+
         total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
+        total_angle = abs(self.min_angles[joint]) + abs(self.max_angles[joint])
 
-        pos = (total_steps / (2 * math.pi)) * angle + self.min_servo_pos[joint]
+        print("ANGLE to STEP: Total steps: " + str(total_steps) + " Total angle: " + str(total_angle))
 
+        angle += abs(self.min_angles[joint])
+        print("Angle after correction: " + str(angle))
+
+        # TODO: Maybe proper rounding is worth it
+        pos = int((total_steps / total_angle) * angle + self.min_servo_pos[joint])
+
+        print("Calculated pos: " + str(pos))
         # TODO: Test properly
         # TODO: Probably very buggy
 
@@ -92,17 +104,10 @@ class Robotarm:
         :param joint: the joint that should be used
         :return: the servo-position in angle
         """
-        if self.min_servo_pos[joint] < pos < self.max_servo_pos[joint]:
-            raise OutOfReachError
 
-        total_steps = (self.max_servo_pos[joint] - self.min_servo_pos[joint])
+        # TODO: Reimplement this!
 
-        angle = ((2 * math.pi) / total_steps) * (pos - self.min_servo_pos[joint])
-
-        # TODO: Test properly
-        # TODO: Probably very buggy
-
-        return angle
+        return 0
 
     def move_to_cartesian(self, x, y, z, fixed_joint, fj_angle):
         """
@@ -150,8 +155,12 @@ class Robotarm:
         """
 
         if self.validate_configuration(angles):
-            cfg = [(joint, self.angle_to_step(angle, joint)) for joint, angle in angles]
-            self.client.set_multi_servo(cfg)
+            cfg = [(joint, True, self.angle_to_step(angle, joint)) for joint, angle in enumerate(angles)]
+            print("Moving to:")
+            # TODO: Just using the first 4 axis for now([:4]). Needs a 2nd hedgehog for more
+            print(cfg[:4])
+            self.client.set_multi_servo(cfg[:4])
+            print("Movement started, should be done very soon!")
         else:
             raise OutOfReachError("The given configuration cannot be reached!")
 
@@ -180,7 +189,14 @@ class Robotarm:
         :param joint: the joint that the angle should be validated for
         :return: True if the given angle is reachable with the given joint, else: False
         """
-        return self.min_angles[joint] < angle < self.max_angles[joint]
+
+        print("Validating: Joint: " + str(joint) + " Angle: " + str(angle))
+        if self.min_angles[joint] <= angle <= self.max_angles[joint] or self.min_angles[joint] >= angle >= self.max_angles[joint]:
+            print("Angle is valid!")
+            return True
+        else:
+            print("Angle is invalid!")
+            return False
 
     def move_servo_over_time(self, pos, joint, duration):
         """
@@ -192,8 +208,13 @@ class Robotarm:
         start_position = self.joint_pos[joint]
         movement = pos - start_position
 
+        print("Starting!")
+
         if movement == 0:
+            print("Already at position")
             return  # Already at position
+
+        print("Starting procedure!")
 
         time_per_step = abs(duration / movement)
         start_time = time.time()
@@ -201,7 +222,7 @@ class Robotarm:
         while start_time + duration > time.time() and pos != self.joint_pos[joint]:
             crnt_step = round((time.time() - start_time) / time_per_step)
             self.move_to_pos(start_position + crnt_step * math.copysign(1, movement), joint)
-            time.sleep(0.001)  # To prevent from overload
+            time.sleep(0.05)  # To prevent from overload
 
         """
         Not very beautiful, but this will ensure that the pos will definitely be reached even
