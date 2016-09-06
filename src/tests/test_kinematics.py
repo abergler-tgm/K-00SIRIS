@@ -195,7 +195,7 @@ class AlignedKinematicsTest(unittest.TestCase):
         Tests the following aligned inverse kinematics problem:
         1) "rear low" Axis 3 fixed:
             0 on base, 1.73 on joint 1, 2.50 on joint 2, -0.75 on joint 3, 0 on joint 4:
-            24, 0, 10
+            35.01157, 0, 25.96866
         """
         print("<Test aligned kuka initial START>")
 
@@ -214,7 +214,7 @@ class AlignedKinematicsTest(unittest.TestCase):
         Tests the following aligned inverse kinematics problem:
         1) "rear low" Axis 3 fixed:
             0 on base, 1.6735 on joint 1, -0.8171 on joint 2, -1.0564 on joint 3, 0 on joint 4:
-            24, 0, 10
+            24, 0, 40
         """
         print("<Test aligned kuka initial START>")
 

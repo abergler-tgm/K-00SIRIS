@@ -8,16 +8,24 @@ class Kinematics:
     This is the revised kinematics module used for 00SIRIS
     """
 
-    def __init__(self, links, base_offset):
+    def __init__(self, links, base_offset, x_offset, y_offset, z_offset):
         """
-        Constructor - used for initialization
-        
+        Coordinate-offset is only used in cartesian kinematics!
+
         :param links: the lengths of all links in an array
         :param base_offset: the distance in between the center of the base axis and the first joint
+        :param x_offset: the x-coordinate offset of the rotary base axis
+        :param y_offset: the y-coordinate offset of the rotary base axis
+        :param z_offset: the y-coordinate offset of the rotary base axis
         """
 
         self.links = links
         self.base_offset = base_offset
+
+        # Coordinate system offset
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.z_offset = z_offset
 
         # Dictionary for storing world coordinate systems
         self.world_cs = {}
@@ -76,13 +84,18 @@ class Kinematics:
 
         print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
 
+        # Apply coordinate offset
+        x, y, z = self.apply_cs_offset(x, y, z)
+
+        # Convert to cylindric
         r, z, phi = self.cartesian_to_cylindric(x, y, z)
 
         return self.inverse_cylindric(r, z, phi, fixed_joint, angle)
 
     def inverse_cylindric(self, r, z, phi, fixed_joint, angle):
         """
-        This calculates all remaining joint angles for the given r, z, phi cylindrical coordinate and fixed joint
+        This calculates all remaining joint angles for the given r, z, phi cylindrical coordinate and fixed joint.
+        Base coordinate system offset will be ignored if this is called independently!
 
         :param r: the radius
         :param z: the z-coordinate
@@ -94,7 +107,7 @@ class Kinematics:
 
         print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
 
-        # Move coordinate system to first joint "root" to remove the offset
+        # Move coordinate system to first joint "root" to remove the base-offset
         r = r - self.base_offset
 
         result_set = [0, 0, 0, 0]
@@ -225,6 +238,10 @@ class Kinematics:
 
         print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
 
+        # Apply coordinate offset
+        x, y, z = self.apply_cs_offset(x, y, z)
+
+        # Convert to cylindric
         r, z, phi = self.cartesian_to_cylindric(x, y, z)
 
         return self.inverse_aligned_cylindric(r, z, phi, alignment)
@@ -327,6 +344,16 @@ class Kinematics:
 
         return result_set
 
+    def apply_cs_offset(self, x, y, z):
+        """
+
+        :param x:
+        :param y:
+        :param z:
+        :return:
+        """
+        return x - self.x_offset, y - self.y_offset, z - self.z_offset
+
     def add_world_cs(self, name, world):
         """
         Adds a new world coordinate system
@@ -341,14 +368,6 @@ class Kinematics:
         :param name: the name of the system
         """
         self.world_cs.pop(name)
-
-    def get_world_cs(self, name):
-        """
-        Returns a world coordinate system
-        :param name: the name of the system
-        :return: the world coordinate system
-        """
-        return self.world_cs[name]
 
     @staticmethod
     def cartesian_to_cylindric(x, y, z):
@@ -365,7 +384,10 @@ class Kinematics:
         atan2(y, x):
         https://de.wikipedia.org/wiki/Polarkoordinaten#Berechnung_des_Winkels_im_Intervall_.28.E2.88.92.CF.80.2C_.CF.80.5D
         """
+        # atan2 returns within +/- pi but 0 to 2*pi is needed here
         phi = math.atan2(y, x)
+        if phi < 0:
+            phi = math.pi - phi
 
         return r, z, phi
 
