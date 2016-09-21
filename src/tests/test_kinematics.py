@@ -14,7 +14,7 @@ class KinematicsTest(unittest.TestCase):
     def setUp(self):
         print("<Setup START>")
         links = [26, 22, 12.5]
-        self.kinematics = Kinematics(links, 0)
+        self.kinematics = Kinematics(links, 0, 0, 0, 0)
 
     def test_inverse_kuka_initial(self):
         """
@@ -188,7 +188,7 @@ class AlignedKinematicsTest(unittest.TestCase):
     def setUp(self):
         print("<Setup START>")
         links = [26, 22, 12.5]
-        self.kinematics = Kinematics(links, 0)
+        self.kinematics = Kinematics(links, 0, 0, 0, 0)
 
     def test_inverse_aligned_kuka_initial(self):
         """
