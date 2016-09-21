@@ -276,7 +276,20 @@ class Robotarm:
 
             time.sleep(0.001)  # To prevent from overload
 
-        self.servo_pos = configs
+    def move_linear_aligned_t(self, a, b, align_start, align_end, resolution, duration):
+        """
+        Moves from point a to point b in a given time.
+        :param a: the point a as (x,y,z)-tuple
+        :param b: the point b as (x,y,z)-tuple
+        :param align_start: the alignment of the grabber at the start of the movement
+        :param align_end: the alignment of the grabber at the start of the movement
+        :param resolution: the number of points that will be used for the movement
+        :param duration: the duration of the movement
+        """
+        points = self.kinematics.linear(a, b, resolution)
+        angles = self.kinematics.linear_aligned(points, align_start, align_end)
+
+        self.move_through_configs_t(angles, duration)
 
     def angle_to_step(self, angle, joint):
         """
@@ -397,6 +410,8 @@ class RobotarmFactory:
         links = [26, 21.7, 12.5]  # TODO maybe 26, 23, 12?
         base_offset = 5.5
         height_offset = 10
+
+        # TODO: Calibrate Axis 1 and Axis 3 (get min/max-angles)
         min_angles = [0, 0.5026548245744, -3.0194196059502, -0.9896016858808, 0, 0]
         max_angles = [2.5 * math.pi, 2.460914245312, 0.069813170079773, 0.7225663103257, 0, 0]
         min_servo_pos = [0, 1975, 1775, 1995, 0, 0]
