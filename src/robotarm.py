@@ -98,19 +98,11 @@ class Robotarm:
         if len(positions) < 1 or len(positions) > 6:
             raise OutOfReachError("1-6 positions required!")
 
-        print("Starting procedure!")
-
-        start_positions = self.servo_pos  # might have to copy array here
-        print("List of start positions:")
-        print(start_positions)
-
+        start_positions = self.servo_pos
         movements = [pos - self.servo_pos[joint] for joint, pos in enumerate(positions)]
-        print("List of movements:")
-        print(movements)
 
         # If movement = 0 -> Don't move: Set times_per_step to 0 and check for 0 when calculating crnt step
         times_per_step = [abs(duration / movement) if movement != 0 else 0 for movement in movements]
-
         start_time = time.time()
 
         while start_time + duration > time.time():
@@ -132,7 +124,6 @@ class Robotarm:
             positions.append(self.servo_pos[index])
 
         self.servo_pos = positions
-        print("move multi over time - done")
 
     def move_to_angle(self, angle, joint):
         """
@@ -231,11 +222,8 @@ class Robotarm:
         if self.validate_config(angles):
             positions = [self.angle_to_step(angle, joint) for joint, angle in enumerate(angles)]
             cfg = [(joint, True, position) for joint, position in enumerate(positions)]
-            print("Moving to:")
             # TODO: Just using the first 4 axis for now([:4]). Needs a 2nd hedgehog for more
-            print(cfg[:4])
             self.client.set_multi_servo(cfg[:4])
-            print("Movement started, should be done very soon!")
 
             # Update positions
             for index in range(len(positions), 6):
@@ -257,6 +245,38 @@ class Robotarm:
             self.move_to_multi_pos_t(positions, duration)  # Already updates the servo positions
         else:
             raise OutOfReachError("The given configuration cannot be reached!")
+
+    def move_through_configs_t(self, configs, duration):
+        """
+        Moves the joints through all the given configurations in the given duration
+        If less than 6 positions are given, the first x joints are moved, where x is the number of given positions
+        :param configs: the configurations as list of list of angles
+                    e.g. [[0.0, 1.7, -2.0, 0.3], [0.0, 1.7, -2.1, 0.5], ...]
+        :param duration: the duration that the movement should take
+        """
+
+        for index, config in enumerate(configs):
+            if len(config) < 1 or len(config) > 6:
+                raise OutOfReachError("1-6 positions required!")
+
+            # Pre-validation, to find errors BEFORE the movement starts and not in between:
+            if not self.validate_config(config):
+                raise OutOfReachError("At least one of the given angles is not valid! Index: " + str(index))
+
+        time_per_config = duration/len(configs)
+
+        start_time = time.time()
+
+        while start_time + duration > time.time():
+            crnt_step = int((time.time() - start_time) / time_per_config)
+
+            # Using move_to_config_t to make the movement "smoother"
+            # To leave some room for calculation-time, only 90% of the intended time is used as parameter
+            self.move_to_config_t(configs[crnt_step], time_per_config * 0.9)
+
+            time.sleep(0.001)  # To prevent from overload
+
+        self.servo_pos = configs
 
     def angle_to_step(self, angle, joint):
         """
@@ -322,13 +342,10 @@ class Robotarm:
         :return: True if the given angle is reachable with the given joint, else: False
         """
 
-        print("Validating: Joint: " + str(joint) + " Angle: " + str(angle))
         if self.min_angles[joint] <= angle <= self.max_angles[joint] or self.min_angles[joint] >= angle >= \
                 self.max_angles[joint]:
-            print("Angle is valid!")
             return True
         else:
-            print("Angle is invalid!")
             return False
 
     def get_tool_cs(self):
@@ -377,13 +394,13 @@ class RobotarmFactory:
         :return:
         """
         # TODO: Improve precision
-        links = [26, 22, 12.5]
+        links = [26, 21.7, 12.5]  # TODO maybe 26, 23, 12?
         base_offset = 5.5
         height_offset = 10
-        min_angles = [0, 0.5026548245744, -2.560398012676, -0.9896016858808, 0, 0]
-        max_angles = [2.5 * math.pi, 2.277654673853, 0, 0.7225663103257, 0, 0]
-        min_servo_pos = [0, 2000, 1810, 1920, 0, 0]
-        max_servo_pos = [1980, 0, 100, 20, 0, 0]
+        min_angles = [0, 0.5026548245744, -3.0194196059502, -0.9896016858808, 0, 0]
+        max_angles = [2.5 * math.pi, 2.460914245312, 0.069813170079773, 0.7225663103257, 0, 0]
+        min_servo_pos = [0, 1975, 1775, 1995, 0, 0]
+        max_servo_pos = [2000, 0, 120, 18, 0, 0]
 
         x_offset = 0
         y_offset = 0

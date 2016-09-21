@@ -105,7 +105,7 @@ class Kinematics:
         :return: all joints inverse kinematics result
         """
 
-        print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
+        # print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
 
         # Move coordinate system to first joint "root" to remove the base-offset
         r = r - self.base_offset
@@ -114,7 +114,7 @@ class Kinematics:
 
         # Vector to the given P
         vp = math.sqrt(r ** 2 + z ** 2)
-        print("Pv: " + str(vp))
+        # print("Pv: " + str(vp))
 
         if fixed_joint == 0:
             raise ParameterError("Base axis cannot be fixed joint!")
@@ -129,34 +129,28 @@ class Kinematics:
             theta_b = theta_1 - theta_tcp
 
             b = math.sqrt(self.links[0] ** 2 + vp ** 2 - 2 * self.links[0] * vp * math.cos(theta_b))
-            print("b: " + str(b))
 
             # Calculate theta_2
             try:
                 theta_l2 = math.acos((-self.links[2] ** 2 + self.links[1] ** 2 + b ** 2) / (2 * self.links[1] * b))
-                print("Theta_l2: " + str(theta_l2))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
             try:
                 theta_vp = math.acos((-vp ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
-                print("Theta_vp: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_vp! - The point can most likely not be reached.")
 
             theta_2 = -(math.pi - theta_l2 - theta_vp)
-            print("Theta_2: " + str(theta_2))
 
             # Calculate theta_3
             try:
                 theta_b2 = math.acos(
                     (-b ** 2 + self.links[1] ** 2 + self.links[2] ** 2) / (2 * self.links[1] * self.links[2]))
-                print("Theta_b2: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b2! - The point can most likely not be reached.")
 
             theta_3 = -(math.pi - theta_b2)
-            print("Theta_3: " + str(theta_3))
 
         elif fixed_joint == 2:
             print("Fixed joint " + str(fixed_joint) + " not yet implemented.")
@@ -167,44 +161,35 @@ class Kinematics:
 
             # Calculate b
             theta_b2 = math.pi + theta_3
-            print("Theta_b2: " + str(theta_b2))
-
             b = math.sqrt(
                 self.links[1] ** 2 + self.links[2] ** 2 - 2 * self.links[1] * self.links[2] * math.cos(theta_b2))
-            print("b: " + str(b))
 
             # calculate theta_1
             try:
                 theta_b = math.acos((-b ** 2 + self.links[0] ** 2 + vp ** 2) / (2 * self.links[0] * vp))
-                print("Theta_b: " + str(theta_b))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_b! - The point can most likely not be reached.")
 
             try:
                 theta_tcp = math.asin(z / vp)
-                print("Theta_tcp: " + str(theta_tcp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
 
             theta_1 = theta_b + theta_tcp
-            print("Theta_1: " + str(theta_1))
 
             # Calculate theta_2
             try:
                 theta_l2 = math.acos((-self.links[2] ** 2 + self.links[1] ** 2 + b ** 2) / (2 * self.links[1] * b)) \
                            * math.copysign(1, -theta_3)
-                print("Theta_l2: " + str(theta_l2))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
             try:
                 theta_vp = math.acos((-vp ** 2 + self.links[0] ** 2 + b ** 2) / (2 * self.links[0] * b))
-                print("Theta_vp: " + str(theta_vp))
             except ValueError as e:
                 raise CalculationError("Error while calculating theta_vp! - The point can most likely not be reached.")
 
             theta_2 = -(math.pi - theta_l2 - theta_vp)
-            print("Theta_2: " + str(theta_2))
 
         elif fixed_joint == 4:
             raise ParameterError("The 4th joint is used to turn the gripper and has no influence on the calculation.")
@@ -236,8 +221,6 @@ class Kinematics:
         :return: all joints inverse kinematics result
         """
 
-        print("x: " + str(x) + " y: " + str(y) + " z: " + str(z))
-
         # Apply coordinate offset
         x, y, z = self.apply_cs_offset(x, y, z)
 
@@ -257,84 +240,66 @@ class Kinematics:
         :param alignment: the alignment of the grabber towards the x-axis
         :return: all joints inverse kinematics result
         """
-        # TODO: Write test-cases
-
-        print("r: " + str(r) + "z: " + str(z) + "phi: " + str(phi))
 
         # Move coordinate system to first joint "root" to remove the offset
         r = r - self.base_offset
-        print("new r: " + str(r))
 
         result_set = [0, 0, 0, 0]
 
         # Vector to the given P
         vp = math.sqrt(r ** 2 + z ** 2)
-        print("Pv: " + str(vp))
 
         # Calculate the position of the third joint (R3)
         r3_r = r - (math.cos(alignment) * self.links[2])
         r3_z = z - (math.sin(alignment) * self.links[2])
-        print("Point R3: " + str(r3_r) + "/" + str(r3_z))
 
         # Vector to R3
         vr3 = math.sqrt(r3_r ** 2 + r3_z ** 2)
-        print("Vector to R3: " + str(vr3))
 
         # Calculate the angle of the vector to the third joint (OVR3)
         try:
-            theta_r3 = math.asin(r3_z / vr3)
-            print("Theta_r3: " + str(theta_r3))
+            theta_r3 = math.atan2(r3_z, vr3)
+            #theta_r3 = math.asin(r3_z / vr3)
         except ValueError as e:
             raise CalculationError("Error while calculating theta_r3! - The point can most likely not be reached.")
 
         # Calculate the triangle(R1, R2, R3)
         try:
             theta_vr3 = math.acos((-vr3**2 + self.links[0]**2 + self.links[1]**2) / (2 * self.links[0] * self.links[1]))
-            print("Theta_vr3: " + str(theta_vr3))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_vr3! - The point can most likely not be reached.")
 
         try:
             theta_l0 = math.acos((-self.links[0]**2 + self.links[1]**2 + vr3**2) / (2 * self.links[1] * vr3))
-            print("Theta_l0: " + str(theta_l0))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_l0! - The point can most likely not be reached.")
 
         try:
             theta_l1 = math.pi - theta_l0 - theta_vr3
-            print("Theta_l1: " + str(theta_l1))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_l1! - The point can most likely not be reached.")
 
         # Calculate the angle to the given point
         try:
             theta_tcp = math.asin(z / vp)
-            print("Theta_tcp: " + str(theta_tcp))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_tcp! - The point can most likely not be reached.")
 
         # Calculate 2 angles of the triangle(P0, R3, TCP)
         try:
             theta_vtcp = math.acos((-vp**2 + vr3**2 + self.links[2]**2) / (2 * vr3 * self.links[2]))
-            print("Theta_vtcp: " + str(theta_vtcp))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_vtcp! - The point can most likely not be reached.")
 
         try:
             theta_l2 = math.acos((-self.links[2]**2 + vp**2 + vr3**2) / (2 * vp * vr3))
-            print("Theta_l2: " + str(theta_l2))
         except ValueError as e:
             raise CalculationError("Error while calculating theta_l2! - The point can most likely not be reached.")
 
         # Calculate joint angles
         theta_1 = theta_tcp + theta_l2 + theta_l1
-        print("Theta_1: " + str(theta_1))
-
         theta_2 = -(math.pi - theta_vr3)
-        print("Theta_2: " + str(theta_2))
-
         theta_3 = -(math.pi - (theta_l0 + theta_vtcp))
-        print("Theta_3: " + str(theta_3))
 
         # Build result_set
         result_set[0] = phi
@@ -343,6 +308,45 @@ class Kinematics:
         result_set[3] = theta_3
 
         return result_set
+
+    def linear(self, a, b, x):
+        """
+        Generates a linear path between a and b at a resolution of x points
+        :param a: the first point as tuple (x, y, z)
+        :param b: the second point as tuple (x, y, z)
+        :param x: the number of points that should be generated between the two given points
+        :return: x points between a and b
+        """
+        p1 = np.array(a)
+        p2 = np.array(b)
+
+        # Formula: vx = p1 + t*(p2-p1)
+        vx = []
+
+        for i in range(1, x+1):
+            vx.append(p1 + (i/x) * (p2-p1))
+
+        # Convert to tuples and return
+        return [(x, y, z) for x, y, z in [points.tolist() for points in vx]]
+
+    def linear_aligned(self, points, align_start, align_end):
+        """
+        Calculates all angles for the given route
+        :param points: As list of tuples, as it is returned from linear
+        :param align_start: the alignment at the start of the route
+        :param align_end: the alignment at the end of the route
+        :return: a list of all angles of all points as array
+        """
+        angles = []
+        try:
+            for i, point in enumerate(points):
+                alignment = align_start + i/len(points) * (align_end-align_start)
+                angles.append(self.inverse_aligned(point[0], point[1], point[2], alignment))
+
+        except KinematicsError as e:
+            raise CalculationError("One of the points on the given route cannot be reached.")
+
+        return angles
 
     def apply_cs_offset(self, x, y, z):
         """
